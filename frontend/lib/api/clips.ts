@@ -1,4 +1,4 @@
-import { Clip, CreateClipDto, GenerateMetadataDto, GenerateMetadataResponseDto, BulkUploadRequest, BulkUploadResponse, BulkUpdateRequest, BulkUpdateResponse } from '@/types';
+import { Clip, CreateClipDto, GenerateMetadataDto, GenerateMetadataResponseDto, BulkUploadRequest, BulkUploadResponse, BulkUpdateRequest, BulkUpdateResponse, SyncRequest, SyncResponse } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5059';
 
@@ -125,6 +125,23 @@ export async function bulkUpdateClips(updates: BulkUpdateRequest['updates']): Pr
   if (!response.ok) {
     const error = await response.text();
     throw new Error(error || 'Failed to update clips');
+  }
+  return response.json();
+}
+
+export async function syncClips(rootFolderPath?: string): Promise<SyncResponse> {
+  // If rootFolderPath is empty or undefined, send empty object to use configured default
+  const request: SyncRequest = { rootFolderPath: rootFolderPath || '' };
+  const response = await fetch(`${API_BASE_URL}/api/clips/sync`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(error || 'Failed to sync clips');
   }
   return response.json();
 }

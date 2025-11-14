@@ -58,10 +58,22 @@ export default function NavigationBar() {
               Bulk Upload
             </button>
             <button
+              onClick={() => router.push('/clips/sync')}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+            >
+              Sync Filesystem
+            </button>
+            <button
               onClick={() => router.push('/tags')}
               className="px-4 py-2 bg-[#202020] text-white rounded-lg hover:bg-[#303030] transition-colors font-medium border border-[#303030]"
             >
               Manage Tags
+            </button>
+            <button
+              onClick={() => router.push('/settings')}
+              className="px-4 py-2 bg-[#202020] text-white rounded-lg hover:bg-[#303030] transition-colors font-medium border border-[#303030]"
+            >
+              Settings
             </button>
             <button
               onClick={() => router.push('/clips/new')}

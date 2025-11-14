@@ -22,6 +22,7 @@ builder.Services.AddDbContext<ClipDbContext>(options =>
 builder.Services.AddScoped<IYouTubeService, YouTubeService>();
 builder.Services.AddScoped<IClipValidationService, ClipValidationService>();
 builder.Services.AddScoped<IAIClipGenerationService, AIClipGenerationService>();
+builder.Services.AddScoped<ISyncService, SyncService>();
 builder.Services.AddHttpClient<AIClipGenerationService>();
 
 // Configure CORS
@@ -79,12 +80,30 @@ using (var scope = app.Services.CreateScope())
             command.ExecuteNonQuery();
         }
         
+        // Check if Settings table exists
+        command.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='Settings'";
+        using var tableReader = command.ExecuteReader();
+        bool settingsTableExists = tableReader.HasRows;
+        tableReader.Close();
+        
+        if (!settingsTableExists)
+        {
+            // Create Settings table
+            command.CommandText = @"
+                CREATE TABLE Settings (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Key TEXT NOT NULL UNIQUE,
+                    Value TEXT
+                )";
+            command.ExecuteNonQuery();
+        }
+        
         connection.Close();
     }
     catch (Exception ex)
     {
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogWarning(ex, "Could not add Description column automatically. If the database is new, this is normal.");
+        logger.LogWarning(ex, "Could not migrate database automatically. If the database is new, this is normal.");
     }
 }
 

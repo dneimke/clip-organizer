@@ -16,19 +16,26 @@ public class ClipsController : ControllerBase
     private readonly IClipValidationService _validationService;
     private readonly IYouTubeService _youtubeService;
     private readonly IAIClipGenerationService _aiGenerationService;
+    private readonly ISyncService _syncService;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<ClipsController> _logger;
+    private const string RootFolderKey = "VideoLibrary.RootFolder";
 
     public ClipsController(
         ClipDbContext context,
         IClipValidationService validationService,
         IYouTubeService youtubeService,
         IAIClipGenerationService aiGenerationService,
+        ISyncService syncService,
+        IConfiguration configuration,
         ILogger<ClipsController> logger)
     {
         _context = context;
         _validationService = validationService;
         _youtubeService = youtubeService;
         _aiGenerationService = aiGenerationService;
+        _syncService = syncService;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -409,6 +416,64 @@ public class ClipsController : ControllerBase
         }
 
         return Ok(response);
+    }
+
+    [HttpPost("sync")]
+    public async Task<ActionResult<SyncResponseDto>> Sync([FromBody] SyncRequestDto? request)
+    {
+        string rootFolderPath;
+
+        // If root folder path is provided in request, use it
+        if (request != null && !string.IsNullOrWhiteSpace(request.RootFolderPath))
+        {
+            rootFolderPath = request.RootFolderPath;
+        }
+        else
+        {
+            // Otherwise, try to get from database settings
+            var setting = await _context.Settings
+                .FirstOrDefaultAsync(s => s.Key == RootFolderKey);
+
+            if (setting != null && !string.IsNullOrWhiteSpace(setting.Value))
+            {
+                rootFolderPath = setting.Value;
+            }
+            else
+            {
+                // Fall back to appsettings.json
+                var appSettingsPath = _configuration["VideoLibrary:RootFolder"];
+                if (!string.IsNullOrWhiteSpace(appSettingsPath))
+                {
+                    rootFolderPath = appSettingsPath;
+                }
+                else
+                {
+                    return BadRequest("Root folder path is not configured. Please configure it in Settings or provide it in the request.");
+                }
+            }
+        }
+
+        try
+        {
+            // Validate root folder path exists and is accessible
+            if (!Path.IsPathRooted(rootFolderPath))
+            {
+                return BadRequest("Root folder path must be an absolute path");
+            }
+
+            if (!Directory.Exists(rootFolderPath))
+            {
+                return BadRequest("Root folder does not exist");
+            }
+
+            var result = await _syncService.SyncAsync(rootFolderPath);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during sync operation");
+            return StatusCode(500, "An error occurred while syncing clips");
+        }
     }
 
     [HttpPost]

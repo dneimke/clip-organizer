@@ -3,12 +3,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Clip, Tag } from '@/types';
-import { getClips, getUnclassifiedClips } from '@/lib/api/clips';
+import { getClips, getUnclassifiedClips, syncClips } from '@/lib/api/clips';
+import { getRootFolder } from '@/lib/api/settings';
 import { getTags } from '@/lib/api/tags';
 import SearchBar from '@/components/SearchBar';
 import FilterSidebar from '@/components/FilterSidebar';
 import ClipList from '@/components/ClipList';
 import SortDropdown, { SortBy, SortOrder } from '@/components/SortDropdown';
+import Toast from '@/components/Toast';
 
 export default function Home() {
   const router = useRouter();
@@ -21,6 +23,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [unclassifiedCount, setUnclassifiedCount] = useState(0);
+  const [isQuickSyncing, setIsQuickSyncing] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   const loadTags = useCallback(async () => {
     try {
@@ -81,6 +85,45 @@ export default function Home() {
     );
   };
 
+  const handleQuickSync = async () => {
+    setIsQuickSyncing(true);
+    setToast(null);
+
+    try {
+      // Check if root folder is configured
+      const rootFolderSetting = await getRootFolder();
+      if (!rootFolderSetting.rootFolderPath) {
+        setToast({
+          message: 'Root folder not configured. Please configure it in Settings first.',
+          type: 'error',
+        });
+        setIsQuickSyncing(false);
+        return;
+      }
+
+      // Perform sync with configured root folder
+      const result = await syncClips();
+      
+      // Show success message with summary
+      const summary = `Sync complete: ${result.totalScanned} scanned, ${result.totalAdded} added, ${result.totalRemoved} removed`;
+      setToast({
+        message: summary,
+        type: 'success',
+      });
+
+      // Reload clips to show updated list
+      await loadClips();
+      await loadUnclassifiedCount();
+    } catch (err: any) {
+      setToast({
+        message: err.message || 'Failed to sync clips',
+        type: 'error',
+      });
+    } finally {
+      setIsQuickSyncing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#121212]">
       {/* Header */}
@@ -108,6 +151,17 @@ export default function Home() {
                 </button>
               )}
               <button
+                onClick={handleQuickSync}
+                disabled={isQuickSyncing}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
+                title="Quick sync with configured root folder"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                {isQuickSyncing ? 'Syncing...' : 'Quick Sync'}
+              </button>
+              <button
                 onClick={() => router.push('/clips/bulk-upload')}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2"
               >
@@ -115,6 +169,17 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
                 Bulk Upload
+              </button>
+              <button
+                onClick={() => router.push('/settings')}
+                className="px-4 py-2 bg-[#202020] text-white rounded-lg hover:bg-[#303030] transition-colors font-medium flex items-center gap-2 border border-[#303030]"
+                title="Configure application settings"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Settings
               </button>
               <button
                 onClick={() => router.push('/clips/new')}
@@ -170,6 +235,15 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

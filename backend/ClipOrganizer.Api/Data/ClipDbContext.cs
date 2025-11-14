@@ -12,6 +12,7 @@ public class ClipDbContext : DbContext
 
     public DbSet<Clip> Clips { get; set; }
     public DbSet<Tag> Tags { get; set; }
+    public DbSet<Setting> Settings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -38,6 +39,17 @@ public class ClipDbContext : DbContext
             
             // Create unique index on Category + Value to prevent duplicates
             entity.HasIndex(e => new { e.Category, e.Value }).IsUnique();
+        });
+
+        // Configure Setting entity
+        modelBuilder.Entity<Setting>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Key).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Value).HasMaxLength(1000);
+            
+            // Create unique index on Key to prevent duplicates
+            entity.HasIndex(e => e.Key).IsUnique();
         });
 
         // Configure many-to-many relationship

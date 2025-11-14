@@ -99,3 +99,42 @@ export interface BulkUpdateResponse {
   failures: BulkUpdateError[];
 }
 
+export interface SyncRequest {
+  rootFolderPath: string;
+}
+
+export interface SyncAddedClip {
+  clipId: number;
+  filePath: string;
+  title: string;
+}
+
+export interface SyncRemovedClip {
+  clipId: number;
+  filePath: string;
+  title: string;
+}
+
+export interface SyncError {
+  filePath: string;
+  errorMessage: string;
+}
+
+export interface SyncResponse {
+  addedClips: SyncAddedClip[];
+  removedClips: SyncRemovedClip[];
+  errors: SyncError[];
+  totalScanned: number;
+  totalAdded: number;
+  totalRemoved: number;
+}
+
+export interface Setting {
+  key: string;
+  value: string;
+}
+
+export interface RootFolderSetting {
+  rootFolderPath: string;
+}
+
