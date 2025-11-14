@@ -1,6 +1,185 @@
 @ClipOrganizer.Api_HostAddress = http://localhost:5059
+@ContentType = application/json
 
-GET {{ClipOrganizer.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### Variables
+@ClipId = 1
+@TagId = 1
 
-###
+###############################################
+# CLIPS ENDPOINTS
+###############################################
+
+### Get all clips
+GET {{ClipOrganizer.Api_HostAddress}}/api/clips
+Accept: {{ContentType}}
+
+### Get clips with search term
+GET {{ClipOrganizer.Api_HostAddress}}/api/clips?searchTerm=field
+Accept: {{ContentType}}
+
+### Get clips with tag filter
+GET {{ClipOrganizer.Api_HostAddress}}/api/clips?tagIds=1&tagIds=2
+Accept: {{ContentType}}
+
+### Get clips sorted by title ascending
+GET {{ClipOrganizer.Api_HostAddress}}/api/clips?sortBy=title&sortOrder=asc
+Accept: {{ContentType}}
+
+### Get unclassified clips only
+GET {{ClipOrganizer.Api_HostAddress}}/api/clips?unclassifiedOnly=true
+Accept: {{ContentType}}
+
+### Get unclassified clips endpoint
+GET {{ClipOrganizer.Api_HostAddress}}/api/clips/unclassified
+Accept: {{ContentType}}
+
+### Get clip by ID
+GET {{ClipOrganizer.Api_HostAddress}}/api/clips/{{ClipId}}
+Accept: {{ContentType}}
+
+### Get clip video (for local clips)
+GET {{ClipOrganizer.Api_HostAddress}}/api/clips/{{ClipId}}/video
+Accept: video/mp4
+
+### Create a local clip
+POST {{ClipOrganizer.Api_HostAddress}}/api/clips
+Content-Type: {{ContentType}}
+
+{
+  "locationString": "C:\\Videos\\clip.mp4",
+  "title": "My Clip Title",
+  "description": "Description of the clip",
+  "tagIds": [1, 2],
+  "newTags": [
+    {
+      "category": "SkillTactic",
+      "value": "Flick"
+    }
+  ]
+}
+
+### Create a YouTube clip
+POST {{ClipOrganizer.Api_HostAddress}}/api/clips
+Content-Type: {{ContentType}}
+
+{
+  "locationString": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+  "title": "Optional Custom Title",
+  "description": "Optional description",
+  "tagIds": [1]
+}
+
+### Update clip
+PUT {{ClipOrganizer.Api_HostAddress}}/api/clips/{{ClipId}}
+Content-Type: {{ContentType}}
+
+{
+  "locationString": "C:\\Videos\\updated-clip.mp4",
+  "title": "Updated Title",
+  "description": "Updated description",
+  "tagIds": [1, 2, 3]
+}
+
+### Delete clip
+DELETE {{ClipOrganizer.Api_HostAddress}}/api/clips/{{ClipId}}
+
+### Generate metadata with AI
+POST {{ClipOrganizer.Api_HostAddress}}/api/clips/generate-metadata
+Content-Type: {{ContentType}}
+
+{
+  "notes": "This clip shows a penalty corner attack with a successful flick into the top corner"
+}
+
+### Bulk upload clips
+POST {{ClipOrganizer.Api_HostAddress}}/api/clips/bulk-upload
+Content-Type: {{ContentType}}
+
+{
+  "filePaths": [
+    "C:\\Videos\\clip1.mp4",
+    "C:\\Videos\\clip2.mp4",
+    "C:\\Videos\\clip3.mp4"
+  ]
+}
+
+### Bulk update clips
+PUT {{ClipOrganizer.Api_HostAddress}}/api/clips/bulk-update
+Content-Type: {{ContentType}}
+
+{
+  "updates": [
+    {
+      "clipId": 1,
+      "title": "Updated Title 1",
+      "description": "Updated description",
+      "tagIds": [1, 2]
+    },
+    {
+      "clipId": 2,
+      "title": "Updated Title 2",
+      "tagIds": [3],
+      "newTags": [
+        {
+          "category": "SkillTactic",
+          "value": "PC Attack"
+        }
+      ]
+    }
+  ]
+}
+
+###############################################
+# TAGS ENDPOINTS
+###############################################
+
+### Get all tags (grouped by category)
+GET {{ClipOrganizer.Api_HostAddress}}/api/tags
+Accept: {{ContentType}}
+
+### Get tag categories
+GET {{ClipOrganizer.Api_HostAddress}}/api/tags/categories
+Accept: {{ContentType}}
+
+### Create a new tag
+POST {{ClipOrganizer.Api_HostAddress}}/api/tags
+Content-Type: {{ContentType}}
+
+{
+  "category": "SkillTactic",
+  "value": "Flick"
+}
+
+### Create tag - Field Area example
+POST {{ClipOrganizer.Api_HostAddress}}/api/tags
+Content-Type: {{ContentType}}
+
+{
+  "category": "FieldArea",
+  "value": "Attacking D"
+}
+
+### Create tag - Player Role example
+POST {{ClipOrganizer.Api_HostAddress}}/api/tags
+Content-Type: {{ContentType}}
+
+{
+  "category": "PlayerRole",
+  "value": "Goalie"
+}
+
+### Create tag - Outcome/Quality example
+POST {{ClipOrganizer.Api_HostAddress}}/api/tags
+Content-Type: {{ContentType}}
+
+{
+  "category": "OutcomeQuality",
+  "value": "Success"
+}
+
+###############################################
+# SWAGGER UI
+###############################################
+
+### Swagger UI (open in browser)
+# GET {{ClipOrganizer.Api_HostAddress}}/swagger
