@@ -476,6 +476,68 @@ public class ClipsController : ControllerBase
         }
     }
 
+    [HttpGet("sync-preview")]
+    public async Task<ActionResult<SyncPreviewResponseDto>> SyncPreview([FromQuery] string? rootFolderPath)
+    {
+        string pathToUse;
+
+        // If root folder path is provided in query, use it
+        if (!string.IsNullOrWhiteSpace(rootFolderPath))
+        {
+            pathToUse = rootFolderPath;
+        }
+        else
+        {
+            // Otherwise, try to get from database settings
+            var setting = await _context.Settings
+                .FirstOrDefaultAsync(s => s.Key == RootFolderKey);
+
+            if (setting != null && !string.IsNullOrWhiteSpace(setting.Value))
+            {
+                pathToUse = setting.Value;
+            }
+            else
+            {
+                // Fall back to appsettings.json
+                var appSettingsPath = _configuration["VideoLibrary:RootFolder"];
+                if (!string.IsNullOrWhiteSpace(appSettingsPath))
+                {
+                    pathToUse = appSettingsPath;
+                }
+                else
+                {
+                    return BadRequest("Root folder path is not configured. Please configure it in Settings or provide it in the query parameter.");
+                }
+            }
+        }
+
+        try
+        {
+            var result = await _syncService.PreviewSyncAsync(pathToUse);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during preview sync operation");
+            return StatusCode(500, "An error occurred while previewing sync");
+        }
+    }
+
+    [HttpPost("selective-sync")]
+    public async Task<ActionResult<SyncResponseDto>> SelectiveSync([FromBody] SelectiveSyncRequestDto request)
+    {
+        try
+        {
+            var result = await _syncService.SelectiveSyncAsync(request);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during selective sync operation");
+            return StatusCode(500, "An error occurred while performing selective sync");
+        }
+    }
+
     [HttpPost]
     public async Task<ActionResult<ClipDto>> CreateClip([FromBody] CreateClipDto dto)
     {

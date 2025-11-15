@@ -1,4 +1,4 @@
-import { Clip, CreateClipDto, GenerateMetadataDto, GenerateMetadataResponseDto, BulkUploadRequest, BulkUploadResponse, BulkUpdateRequest, BulkUpdateResponse, SyncRequest, SyncResponse } from '@/types';
+import { Clip, CreateClipDto, GenerateMetadataDto, GenerateMetadataResponseDto, BulkUploadRequest, BulkUploadResponse, BulkUpdateRequest, BulkUpdateResponse, SyncRequest, SyncResponse, SyncPreviewResponse, SelectiveSyncRequest } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5059';
 
@@ -142,6 +142,34 @@ export async function syncClips(rootFolderPath?: string): Promise<SyncResponse> 
   if (!response.ok) {
     const error = await response.text();
     throw new Error(error || 'Failed to sync clips');
+  }
+  return response.json();
+}
+
+export async function getSyncPreview(rootFolderPath?: string): Promise<SyncPreviewResponse> {
+  const params = new URLSearchParams();
+  if (rootFolderPath) {
+    params.append('rootFolderPath', rootFolderPath);
+  }
+  const response = await fetch(`${API_BASE_URL}/api/clips/sync-preview?${params.toString()}`);
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(error || 'Failed to get sync preview');
+  }
+  return response.json();
+}
+
+export async function selectiveSync(request: SelectiveSyncRequest): Promise<SyncResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/clips/selective-sync`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(error || 'Failed to perform selective sync');
   }
   return response.json();
 }

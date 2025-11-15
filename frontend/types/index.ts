@@ -138,3 +138,32 @@ export interface RootFolderSetting {
   rootFolderPath: string;
 }
 
+export interface ReconciliationItem {
+  filePath: string;
+  status: 'new' | 'missing' | 'matched' | 'error';
+  directory?: string;
+  fileSize?: number;
+  lastModified?: string;
+  clipId?: number;
+  title?: string;
+  description?: string;
+  tags?: Tag[];
+  errorMessage?: string;
+}
+
+export interface SyncPreviewResponse {
+  items: ReconciliationItem[];
+  totalScanned: number;
+  newFilesCount: number;
+  missingFilesCount: number;
+  matchedFilesCount: number;
+  errorCount: number;
+  rootFolderPath: string;
+}
+
+export interface SelectiveSyncRequest {
+  rootFolderPath: string;
+  filesToAdd: string[];
+  clipIdsToRemove: number[];
+}
+
