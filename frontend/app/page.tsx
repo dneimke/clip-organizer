@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Clip, Tag } from '@/types';
-import { getClips, getUnclassifiedClips, getSubfolders } from '@/lib/api/clips';
+import { getClips, getSubfolders } from '@/lib/api/clips';
 import { getTags } from '@/lib/api/tags';
 import SearchBar from '@/components/SearchBar';
 import FilterSidebar from '@/components/FilterSidebar';
@@ -25,14 +25,17 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [unclassifiedCount, setUnclassifiedCount] = useState(0);
+  const [unclassifiedFilterActive, setUnclassifiedFilterActive] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('clipViewMode');
-      return (saved === 'card' || saved === 'list') ? saved : 'card';
+  const [viewMode, setViewMode] = useState<ViewMode>('card');
+
+  // Load view mode from localStorage after hydration
+  useEffect(() => {
+    const saved = localStorage.getItem('clipViewMode');
+    if (saved === 'card' || saved === 'list') {
+      setViewMode(saved);
     }
-    return 'card';
-  });
+  }, []);
 
   const loadTags = useCallback(async () => {
     try {
@@ -54,7 +57,7 @@ export default function Home() {
 
   const loadUnclassifiedCount = useCallback(async () => {
     try {
-      const unclassified = await getUnclassifiedClips();
+      const unclassified = await getClips(undefined, undefined, undefined, undefined, undefined, true);
       setUnclassifiedCount(unclassified.length);
     } catch (err) {
       console.error('Failed to load unclassified count:', err);
@@ -69,7 +72,8 @@ export default function Home() {
         selectedTagIds.length > 0 ? selectedTagIds : undefined,
         selectedSubfolders.length > 0 ? selectedSubfolders : undefined,
         sortBy,
-        sortOrder
+        sortOrder,
+        unclassifiedFilterActive
       );
       setClips(fetchedClips);
       setError(null);
@@ -79,7 +83,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, selectedTagIds, selectedSubfolders, sortBy, sortOrder]);
+  }, [searchTerm, selectedTagIds, selectedSubfolders, sortBy, sortOrder, unclassifiedFilterActive]);
 
   useEffect(() => {
     loadTags();
@@ -115,6 +119,7 @@ export default function Home() {
   const handleClearFilters = () => {
     setSelectedTagIds([]);
     setSelectedSubfolders([]);
+    setUnclassifiedFilterActive(false);
   };
 
   const handleViewModeChange = (mode: ViewMode) => {
@@ -157,6 +162,10 @@ export default function Home() {
             selectedSubfolders={selectedSubfolders}
             onSubfolderToggle={handleSubfolderToggle}
             onClearFilters={handleClearFilters}
+            unclassifiedCount={unclassifiedCount}
+            showUnclassifiedFilter={unclassifiedCount > 0}
+            unclassifiedFilterActive={unclassifiedFilterActive}
+            onUnclassifiedFilterToggle={() => setUnclassifiedFilterActive(prev => !prev)}
           />
 
           <div className="flex-1">

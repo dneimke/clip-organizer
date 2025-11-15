@@ -155,7 +155,7 @@ export default function BulkUpload({ onComplete, onClose }: BulkUploadProps) {
           if (onClose) {
             onClose();
           } else {
-            router.push('/clips/bulk-classify');
+            router.push('/');
           }
         }, 1500);
       }

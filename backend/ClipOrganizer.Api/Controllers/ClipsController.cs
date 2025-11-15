@@ -126,28 +126,6 @@ public class ClipsController : ControllerBase
         }
     }
 
-    [HttpGet("unclassified")]
-    public async Task<ActionResult<IEnumerable<ClipDto>>> GetUnclassifiedClips()
-    {
-        try
-        {
-            var clips = await _context.Clips
-                .Include(c => c.Tags)
-                .ToListAsync();
-
-            var unclassifiedClips = clips.Where(c => IsUnclassified(c))
-                .OrderByDescending(c => c.Id)
-                .ToList();
-
-            return Ok(unclassifiedClips.Select(c => MapToDto(c)));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching unclassified clips");
-            return StatusCode(500, "An error occurred while fetching unclassified clips");
-        }
-    }
-
     [HttpGet("{id}")]
     public async Task<ActionResult<ClipDto>> GetClip(int id)
     {
@@ -362,90 +340,6 @@ public class ClipsController : ControllerBase
                 response.Failures.Add(new BulkUploadErrorDto
                 {
                     FilePath = filePath,
-                    ErrorMessage = $"An error occurred: {ex.Message}"
-                });
-            }
-        }
-
-        return Ok(response);
-    }
-
-    [HttpPut("bulk-update")]
-    public async Task<ActionResult<BulkUpdateResponseDto>> BulkUpdate([FromBody] BulkUpdateRequestDto request)
-    {
-        if (request.Updates == null || !request.Updates.Any())
-        {
-            return BadRequest("Updates are required");
-        }
-
-        var response = new BulkUpdateResponseDto();
-
-        foreach (var update in request.Updates)
-        {
-            try
-            {
-                var clip = await _context.Clips
-                    .Include(c => c.Tags)
-                    .FirstOrDefaultAsync(c => c.Id == update.ClipId);
-
-                if (clip == null)
-                {
-                    response.Failures.Add(new BulkUpdateErrorDto
-                    {
-                        ClipId = update.ClipId,
-                        ErrorMessage = "Clip not found"
-                    });
-                    continue;
-                }
-
-                // Update title if provided
-                if (!string.IsNullOrWhiteSpace(update.Title))
-                {
-                    clip.Title = update.Title;
-                }
-
-                // Update description if provided
-                if (update.Description != null)
-                {
-                    clip.Description = update.Description;
-                }
-
-                // Update tags if provided
-                if (update.TagIds != null)
-                {
-                    clip.Tags.Clear();
-                    if (update.TagIds.Any())
-                    {
-                        var tags = await _context.Tags
-                            .Where(t => update.TagIds.Contains(t.Id))
-                            .ToListAsync();
-
-                        foreach (var tag in tags)
-                        {
-                            clip.Tags.Add(tag);
-                        }
-                    }
-                }
-
-                // Create and add new tags if provided
-                if (update.NewTags != null && update.NewTags.Any())
-                {
-                    var newTags = await GetOrCreateTagsAsync(update.NewTags);
-                    foreach (var tag in newTags)
-                    {
-                        clip.Tags.Add(tag);
-                    }
-                }
-
-                await _context.SaveChangesAsync();
-                response.SuccessCount++;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating clip: {ClipId}", update.ClipId);
-                response.Failures.Add(new BulkUpdateErrorDto
-                {
-                    ClipId = update.ClipId,
                     ErrorMessage = $"An error occurred: {ex.Message}"
                 });
             }

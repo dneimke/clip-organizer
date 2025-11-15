@@ -29,10 +29,6 @@ Accept: {{ContentType}}
 GET {{ClipOrganizer.Api_HostAddress}}/api/clips?unclassifiedOnly=true
 Accept: {{ContentType}}
 
-### Get unclassified clips endpoint
-GET {{ClipOrganizer.Api_HostAddress}}/api/clips/unclassified
-Accept: {{ContentType}}
-
 ### Get clip by ID
 GET {{ClipOrganizer.Api_HostAddress}}/api/clips/{{ClipId}}
 Accept: {{ContentType}}
@@ -100,32 +96,6 @@ Content-Type: {{ContentType}}
     "C:\\Videos\\clip1.mp4",
     "C:\\Videos\\clip2.mp4",
     "C:\\Videos\\clip3.mp4"
-  ]
-}
-
-### Bulk update clips
-PUT {{ClipOrganizer.Api_HostAddress}}/api/clips/bulk-update
-Content-Type: {{ContentType}}
-
-{
-  "updates": [
-    {
-      "clipId": 1,
-      "title": "Updated Title 1",
-      "description": "Updated description",
-      "tagIds": [1, 2]
-    },
-    {
-      "clipId": 2,
-      "title": "Updated Title 2",
-      "tagIds": [3],
-      "newTags": [
-        {
-          "category": "SkillTactic",
-          "value": "PC Attack"
-        }
-      ]
-    }
   ]
 }
 

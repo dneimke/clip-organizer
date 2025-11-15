@@ -10,8 +10,8 @@ export default function BulkUploadPage() {
     <BulkUpload 
       onClose={() => router.push('/')}
       onComplete={() => {
-        // Optionally navigate to bulk classify after completion
-        router.push('/clips/bulk-classify');
+        // Navigate to home page after completion
+        router.push('/');
       }}
     />
   );

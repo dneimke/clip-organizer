@@ -77,27 +77,6 @@ export interface BulkUploadResponse {
   failures: BulkUploadError[];
 }
 
-export interface BulkUpdateClip {
-  clipId: number;
-  title?: string;
-  description?: string;
-  tagIds?: number[];
-  newTags?: NewTag[];
-}
-
-export interface BulkUpdateRequest {
-  updates: BulkUpdateClip[];
-}
-
-export interface BulkUpdateError {
-  clipId: number;
-  errorMessage: string;
-}
-
-export interface BulkUpdateResponse {
-  successCount: number;
-  failures: BulkUpdateError[];
-}
 
 export interface SyncRequest {
   rootFolderPath: string;

@@ -11,6 +11,10 @@ interface FilterSidebarProps {
   selectedSubfolders: string[];
   onSubfolderToggle: (subfolder: string) => void;
   onClearFilters?: () => void;
+  unclassifiedCount: number;
+  showUnclassifiedFilter: boolean;
+  unclassifiedFilterActive: boolean;
+  onUnclassifiedFilterToggle: () => void;
 }
 
 export default function FilterSidebar({ 
@@ -20,13 +24,18 @@ export default function FilterSidebar({
   subfolders,
   selectedSubfolders,
   onSubfolderToggle,
-  onClearFilters
+  onClearFilters,
+  unclassifiedCount,
+  showUnclassifiedFilter,
+  unclassifiedFilterActive,
+  onUnclassifiedFilterToggle
 }: FilterSidebarProps) {
   const [tagsExpanded, setTagsExpanded] = useState(true);
   const [subfoldersExpanded, setSubfoldersExpanded] = useState(true);
+  const [unclassifiedExpanded, setUnclassifiedExpanded] = useState(true);
   const [subfolderSearch, setSubfolderSearch] = useState('');
 
-  const hasActiveFilters = selectedTagIds.length > 0 || selectedSubfolders.length > 0;
+  const hasActiveFilters = selectedTagIds.length > 0 || selectedSubfolders.length > 0 || unclassifiedFilterActive;
 
   const filteredSubfolders = useMemo(() => {
     if (!subfolderSearch.trim()) return subfolders;
@@ -176,6 +185,49 @@ export default function FilterSidebar({
             </div>
           )}
         </div>
+
+        {/* Unclassified Section */}
+        {showUnclassifiedFilter && (
+          <div className="border-b border-[#303030] pb-4 last:border-0">
+            <button
+              onClick={() => setUnclassifiedExpanded(!unclassifiedExpanded)}
+              className="w-full flex items-center justify-between mb-3 text-left"
+            >
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-white">Unclassified</h3>
+                {unclassifiedFilterActive && (
+                  <span className="text-xs bg-yellow-600 text-white px-2 py-0.5 rounded-full">
+                    1
+                  </span>
+                )}
+              </div>
+              <svg
+                className={`w-4 h-4 text-gray-400 transition-transform ${unclassifiedExpanded ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {unclassifiedExpanded && (
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2 cursor-pointer hover:bg-[#303030] px-2 py-1.5 rounded transition-colors group">
+                  <input
+                    type="checkbox"
+                    checked={unclassifiedFilterActive}
+                    onChange={onUnclassifiedFilterToggle}
+                    className="w-4 h-4 text-yellow-600 border-gray-600 rounded focus:ring-yellow-600 focus:ring-2 bg-[#303030] checked:bg-yellow-600"
+                  />
+                  <span className="text-sm text-gray-300 group-hover:text-white transition-colors">
+                    Show unclassified only ({unclassifiedCount})
+                  </span>
+                </label>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

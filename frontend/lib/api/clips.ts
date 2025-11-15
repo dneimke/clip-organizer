@@ -1,4 +1,4 @@
-import { Clip, CreateClipDto, GenerateMetadataDto, GenerateMetadataResponseDto, BulkUploadRequest, BulkUploadResponse, BulkUpdateRequest, BulkUpdateResponse, SyncRequest, SyncResponse, SyncPreviewResponse, SelectiveSyncRequest } from '@/types';
+import { Clip, CreateClipDto, GenerateMetadataDto, GenerateMetadataResponseDto, BulkUploadRequest, BulkUploadResponse, SyncRequest, SyncResponse, SyncPreviewResponse, SelectiveSyncRequest } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5059';
 
@@ -32,7 +32,9 @@ export async function getClips(
 export async function getClip(id: number): Promise<Clip> {
   const response = await fetch(`${API_BASE_URL}/api/clips/${id}`);
   if (!response.ok) {
-    throw new Error('Failed to fetch clip');
+    const errorText = await response.text();
+    const errorMessage = errorText || `Failed to fetch clip: ${response.status} ${response.statusText}`;
+    throw new Error(errorMessage);
   }
   return response.json();
 }
@@ -107,31 +109,6 @@ export async function bulkUploadClips(filePaths: string[]): Promise<BulkUploadRe
   return response.json();
 }
 
-export async function getUnclassifiedClips(): Promise<Clip[]> {
-  const response = await fetch(`${API_BASE_URL}/api/clips/unclassified`);
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Failed to fetch unclassified clips:', response.status, errorText);
-    throw new Error(`Failed to fetch unclassified clips: ${response.status} ${errorText || response.statusText}`);
-  }
-  return response.json();
-}
-
-export async function bulkUpdateClips(updates: BulkUpdateRequest['updates']): Promise<BulkUpdateResponse> {
-  const request: BulkUpdateRequest = { updates };
-  const response = await fetch(`${API_BASE_URL}/api/clips/bulk-update`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(request),
-  });
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error || 'Failed to update clips');
-  }
-  return response.json();
-}
 
 export async function syncClips(rootFolderPath?: string): Promise<SyncResponse> {
   // If rootFolderPath is empty or undefined, send empty object to use configured default

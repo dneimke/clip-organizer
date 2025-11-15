@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { getUnclassifiedClips, syncClips } from '@/lib/api/clips';
+import { syncClips } from '@/lib/api/clips';
 import { getRootFolder } from '@/lib/api/settings';
 import Link from 'next/link';
 import Toast from './Toast';
@@ -11,25 +11,11 @@ import SessionPlanModal from './SessionPlanModal';
 export default function NavigationBar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [unclassifiedCount, setUnclassifiedCount] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isQuickSyncing, setIsQuickSyncing] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [isSessionPlanModalOpen, setIsSessionPlanModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  const loadUnclassifiedCount = useCallback(async () => {
-    try {
-      const unclassified = await getUnclassifiedClips();
-      setUnclassifiedCount(unclassified.length);
-    } catch (err) {
-      console.error('Failed to load unclassified count:', err);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadUnclassifiedCount();
-  }, [pathname, loadUnclassifiedCount]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -75,9 +61,6 @@ export default function NavigationBar() {
         type: 'success',
       });
 
-      // Reload unclassified count
-      await loadUnclassifiedCount();
-      
       // Refresh the page if we're on the home page
       if (pathname === '/') {
         router.refresh();
@@ -184,23 +167,6 @@ export default function NavigationBar() {
                 </svg>
                 <span className="hidden sm:inline">New Clip</span>
               </Link>
-              
-              {/* Unclassified - Contextual Badge */}
-              {unclassifiedCount > 0 && (
-                <Link
-                  href="/clips/bulk-classify"
-                  className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors font-medium flex items-center gap-2 relative"
-                  aria-label={`${unclassifiedCount} unclassified clips`}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                  <span className="hidden sm:inline">Unclassified</span>
-                  <span className="bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center">
-                    {unclassifiedCount}
-                  </span>
-                </Link>
-              )}
               
               {/* Hamburger Menu - Secondary Actions */}
               <div className="relative" ref={menuRef}>
