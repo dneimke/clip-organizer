@@ -13,6 +13,7 @@ public class ClipDbContext : DbContext
     public DbSet<Clip> Clips { get; set; }
     public DbSet<Tag> Tags { get; set; }
     public DbSet<Setting> Settings { get; set; }
+    public DbSet<SessionPlan> SessionPlans { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -52,11 +53,26 @@ public class ClipDbContext : DbContext
             entity.HasIndex(e => e.Key).IsUnique();
         });
 
-        // Configure many-to-many relationship
+        // Configure SessionPlan entity
+        modelBuilder.Entity<SessionPlan>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Summary).HasMaxLength(1000).HasDefaultValue(string.Empty);
+            entity.Property(e => e.CreatedDate).IsRequired();
+        });
+
+        // Configure many-to-many relationship between Clip and Tag
         modelBuilder.Entity<Clip>()
             .HasMany(c => c.Tags)
             .WithMany(t => t.Clips)
             .UsingEntity(j => j.ToTable("ClipTags"));
+
+        // Configure many-to-many relationship between SessionPlan and Clip
+        modelBuilder.Entity<SessionPlan>()
+            .HasMany(sp => sp.Clips)
+            .WithMany()
+            .UsingEntity(j => j.ToTable("SessionPlanClips"));
     }
 }
 

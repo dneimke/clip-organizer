@@ -167,3 +167,22 @@ export interface SelectiveSyncRequest {
   clipIdsToRemove: number[];
 }
 
+export interface SessionPlan {
+  id: number;
+  title: string;
+  summary: string;
+  createdDate: string;
+  clipIds: number[];
+}
+
+export interface GenerateSessionPlanRequest {
+  durationMinutes: number;
+  focusAreas: string[];
+}
+
+export interface CreateSessionPlanRequest {
+  title: string;
+  summary: string;
+  clipIds: number[];
+}
+

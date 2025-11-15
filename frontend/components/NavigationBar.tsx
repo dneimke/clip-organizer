@@ -6,6 +6,7 @@ import { getUnclassifiedClips, syncClips } from '@/lib/api/clips';
 import { getRootFolder } from '@/lib/api/settings';
 import Link from 'next/link';
 import Toast from './Toast';
+import SessionPlanModal from './SessionPlanModal';
 
 export default function NavigationBar() {
   const pathname = usePathname();
@@ -14,6 +15,7 @@ export default function NavigationBar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isQuickSyncing, setIsQuickSyncing] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [isSessionPlanModalOpen, setIsSessionPlanModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const loadUnclassifiedCount = useCallback(async () => {
@@ -154,6 +156,18 @@ export default function NavigationBar() {
                 <span className="hidden sm:inline">{isQuickSyncing ? 'Syncing...' : 'Quick Sync'}</span>
               </button>
               
+              {/* Plan a Session - Primary Action */}
+              <button
+                onClick={() => setIsSessionPlanModalOpen(true)}
+                className="px-4 py-2 bg-[#007BFF] text-white rounded-lg hover:bg-[#0056b3] transition-colors font-medium flex items-center gap-2"
+                aria-label="Plan a session"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <span className="hidden sm:inline">Plan a Session</span>
+              </button>
+              
               {/* New Clip - Primary Action */}
               <Link
                 href="/clips/new"
@@ -254,6 +268,15 @@ export default function NavigationBar() {
                       }
                       label="Manage Tags"
                     />
+                    <MenuLink
+                      href="/plans"
+                      icon={
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                      }
+                      label="Session Plans"
+                    />
                     <div className="border-t border-[#303030] my-2" />
                     <MenuLink
                       href="/settings"
@@ -281,6 +304,18 @@ export default function NavigationBar() {
           onClose={() => setToast(null)}
         />
       )}
+
+      {/* Session Plan Modal */}
+      <SessionPlanModal
+        isOpen={isSessionPlanModalOpen}
+        onClose={() => setIsSessionPlanModalOpen(false)}
+        onPlanSaved={() => {
+          setIsSessionPlanModalOpen(false);
+          if (pathname === '/plans') {
+            router.refresh();
+          }
+        }}
+      />
     </>
   );
 }

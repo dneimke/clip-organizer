@@ -22,8 +22,10 @@ builder.Services.AddDbContext<ClipDbContext>(options =>
 builder.Services.AddScoped<IYouTubeService, YouTubeService>();
 builder.Services.AddScoped<IClipValidationService, ClipValidationService>();
 builder.Services.AddScoped<IAIClipGenerationService, AIClipGenerationService>();
+builder.Services.AddScoped<ISessionPlanService, SessionPlanService>();
 builder.Services.AddScoped<ISyncService, SyncService>();
 builder.Services.AddHttpClient<AIClipGenerationService>();
+builder.Services.AddHttpClient<SessionPlanService>();
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -82,9 +84,9 @@ using (var scope = app.Services.CreateScope())
         
         // Check if Settings table exists
         command.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='Settings'";
-        using var tableReader = command.ExecuteReader();
-        bool settingsTableExists = tableReader.HasRows;
-        tableReader.Close();
+        using var settingsTableReader = command.ExecuteReader();
+        bool settingsTableExists = settingsTableReader.HasRows;
+        settingsTableReader.Close();
         
         if (!settingsTableExists)
         {
@@ -94,6 +96,74 @@ using (var scope = app.Services.CreateScope())
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Key TEXT NOT NULL UNIQUE,
                     Value TEXT
+                )";
+            command.ExecuteNonQuery();
+        }
+        
+        // Check if SessionPlans table exists
+        command.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='SessionPlans'";
+        using var sessionPlansTableReader = command.ExecuteReader();
+        bool sessionPlansTableExists = sessionPlansTableReader.HasRows;
+        sessionPlansTableReader.Close();
+        
+        if (!sessionPlansTableExists)
+        {
+            // Create SessionPlans table
+            command.CommandText = @"
+                CREATE TABLE SessionPlans (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Title TEXT NOT NULL,
+                    Summary TEXT DEFAULT '',
+                    CreatedDate TEXT NOT NULL
+                )";
+            command.ExecuteNonQuery();
+        }
+        
+        // Check if SessionPlanClips junction table exists and has correct column names
+        command.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='SessionPlanClips'";
+        using var junctionTableReader = command.ExecuteReader();
+        bool junctionTableExists = junctionTableReader.HasRows;
+        junctionTableReader.Close();
+        
+        if (junctionTableExists)
+        {
+            // Check if the table has the wrong column name (SessionPlansId instead of SessionPlanId)
+            command.CommandText = "PRAGMA table_info(SessionPlanClips)";
+            using var columnReader = command.ExecuteReader();
+            var hasWrongColumn = false;
+            while (columnReader.Read())
+            {
+                var columnName = columnReader.GetString(1); // Column name is at index 1
+                if (columnName == "SessionPlansId")
+                {
+                    hasWrongColumn = true;
+                    break;
+                }
+            }
+            columnReader.Close();
+            
+            if (hasWrongColumn)
+            {
+                // Drop and recreate the table with correct column names
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+                logger.LogWarning("SessionPlanClips table has incorrect column name. Recreating table...");
+                command.CommandText = "DROP TABLE SessionPlanClips";
+                command.ExecuteNonQuery();
+                junctionTableExists = false; // Mark as not existing so we recreate it
+            }
+        }
+        
+        if (!junctionTableExists)
+        {
+            // Create SessionPlanClips junction table
+            // Note: EF Core uses SessionPlanId (singular) not SessionPlansId
+            command.CommandText = @"
+                CREATE TABLE SessionPlanClips (
+                    SessionPlanId INTEGER NOT NULL,
+                    ClipsId INTEGER NOT NULL,
+                    PRIMARY KEY (SessionPlanId, ClipsId),
+                    FOREIGN KEY (SessionPlanId) REFERENCES SessionPlans(Id) ON DELETE CASCADE,
+                    FOREIGN KEY (ClipsId) REFERENCES Clips(Id) ON DELETE CASCADE
                 )";
             command.ExecuteNonQuery();
         }
