@@ -104,6 +104,11 @@ export default function Home() {
     );
   };
 
+  const handleClearFilters = () => {
+    setSelectedTagIds([]);
+    setSelectedSubfolders([]);
+  };
+
 
   return (
     <div className="min-h-screen bg-[#121212]">
@@ -133,6 +138,7 @@ export default function Home() {
             subfolders={availableSubfolders}
             selectedSubfolders={selectedSubfolders}
             onSubfolderToggle={handleSubfolderToggle}
+            onClearFilters={handleClearFilters}
           />
 
           <div className="flex-1">
