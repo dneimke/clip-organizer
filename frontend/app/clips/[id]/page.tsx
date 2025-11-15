@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Clip } from '@/types';
 import { getClip, deleteClip } from '@/lib/api/clips';
 import YouTubePlayer from '@/components/YouTubePlayer';
@@ -61,17 +62,43 @@ export default function ClipDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <p className="text-blue-600">Loading clip...</p>
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+        <p className="text-[#007BFF]">Loading clip...</p>
       </div>
     );
   }
 
   if (error || !clip) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-[#121212]">
         <div className="container mx-auto px-4 py-8">
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {/* Breadcrumb Navigation */}
+          <nav className="mb-6" aria-label="Breadcrumb">
+            <ol className="flex items-center gap-2 text-sm" itemScope itemType="https://schema.org/BreadcrumbList">
+              <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
+                <Link 
+                  href="/" 
+                  className="text-gray-400 hover:text-white transition-colors"
+                  itemProp="item"
+                >
+                  <span itemProp="name">Home</span>
+                </Link>
+                <meta itemProp="position" content="1" />
+              </li>
+              <li className="text-gray-600" aria-hidden="true">/</li>
+              <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
+                <Link 
+                  href="/" 
+                  className="text-gray-400 hover:text-white transition-colors"
+                  itemProp="item"
+                >
+                  <span itemProp="name">Clips</span>
+                </Link>
+                <meta itemProp="position" content="2" />
+              </li>
+            </ol>
+          </nav>
+          <div className="bg-red-900/20 border border-red-700 text-red-300 px-4 py-3 rounded">
             {error || 'Clip not found'}
           </div>
         </div>
@@ -81,10 +108,57 @@ export default function ClipDetailPage() {
 
   if (isEditing) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-[#121212]">
         <div className="container mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold text-slate-800 mb-6">Edit Clip</h1>
-          <div className="bg-white rounded-lg shadow-md border border-blue-100 p-6">
+          {/* Breadcrumb Navigation */}
+          <nav className="mb-6" aria-label="Breadcrumb">
+            <ol className="flex items-center gap-2 text-sm" itemScope itemType="https://schema.org/BreadcrumbList">
+              <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
+                <Link 
+                  href="/" 
+                  className="text-gray-400 hover:text-white transition-colors"
+                  itemProp="item"
+                >
+                  <span itemProp="name">Home</span>
+                </Link>
+                <meta itemProp="position" content="1" />
+              </li>
+              <li className="text-gray-600" aria-hidden="true">/</li>
+              <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
+                <Link 
+                  href="/" 
+                  className="text-gray-400 hover:text-white transition-colors"
+                  itemProp="item"
+                >
+                  <span itemProp="name">Clips</span>
+                </Link>
+                <meta itemProp="position" content="2" />
+              </li>
+              <li className="text-gray-600" aria-hidden="true">/</li>
+              <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
+                <Link 
+                  href={`/clips/${clip.id}`}
+                  className="text-gray-400 hover:text-white transition-colors"
+                  itemProp="item"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsEditing(false);
+                    loadClip();
+                  }}
+                >
+                  <span itemProp="name">{clip.title}</span>
+                </Link>
+                <meta itemProp="position" content="3" />
+              </li>
+              <li className="text-gray-600" aria-hidden="true">/</li>
+              <li className="text-white font-medium" itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
+                <span itemProp="name">Edit</span>
+                <meta itemProp="position" content="4" />
+              </li>
+            </ol>
+          </nav>
+          <h1 className="text-3xl font-bold text-white mb-6">Edit Clip</h1>
+          <div className="bg-[#1e1e1e] rounded-lg shadow-lg border border-[#303030] p-6">
             <ClipForm
               clipId={clip.id}
               initialLocationString={clip.storageType === 'YouTube' 
@@ -105,34 +179,67 @@ export default function ClipDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#121212]">
       <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-md border border-blue-100 p-6">
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-800 mb-2">{clip.title}</h1>
-              <div className="flex items-center gap-4 text-sm text-slate-600">
+        {/* Breadcrumb Navigation */}
+        <nav className="mb-6" aria-label="Breadcrumb">
+          <ol className="flex items-center gap-2 text-sm" itemScope itemType="https://schema.org/BreadcrumbList">
+            <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
+              <Link 
+                href="/" 
+                className="text-gray-400 hover:text-white transition-colors"
+                itemProp="item"
+              >
+                <span itemProp="name">Home</span>
+              </Link>
+              <meta itemProp="position" content="1" />
+            </li>
+            <li className="text-gray-600" aria-hidden="true">/</li>
+            <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
+              <Link 
+                href="/" 
+                className="text-gray-400 hover:text-white transition-colors"
+                itemProp="item"
+              >
+                <span itemProp="name">Clips</span>
+              </Link>
+              <meta itemProp="position" content="2" />
+            </li>
+            <li className="text-gray-600" aria-hidden="true">/</li>
+            <li className="text-white font-medium truncate max-w-xs sm:max-w-md md:max-w-lg" itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
+              <span itemProp="name">{clip.title}</span>
+              <meta itemProp="position" content="3" />
+            </li>
+          </ol>
+        </nav>
+
+        {/* Clip Content */}
+        <div className="bg-[#1e1e1e] rounded-lg shadow-lg border border-[#303030] p-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-3xl font-bold text-white mb-2 break-words">{clip.title}</h1>
+              <div className="flex items-center gap-4 text-sm text-gray-400 flex-wrap">
                 <span>Duration: {formatDuration(clip.duration)}</span>
                 <span className={`px-2 py-1 rounded font-medium ${
                   clip.storageType === 'YouTube'
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-blue-100 text-blue-700'
+                    ? 'bg-red-900/50 text-red-300 border border-red-700'
+                    : 'bg-blue-900/50 text-blue-300 border border-blue-700'
                 }`}>
                   {clip.storageType}
                 </span>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-shrink-0">
               <button
                 onClick={() => setIsEditing(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm hover:shadow-md"
+                className="px-4 py-2 bg-[#007BFF] text-white rounded-lg hover:bg-[#0056b3] transition-colors font-medium"
               >
                 Edit
               </button>
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors font-medium shadow-sm hover:shadow-md"
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors font-medium"
               >
                 {isDeleting ? 'Deleting...' : 'Delete'}
               </button>
@@ -149,14 +256,14 @@ export default function ClipDetailPage() {
 
           {clip.tags.length > 0 && (
             <div className="mb-6">
-              <h2 className="text-lg font-semibold mb-2 text-slate-800">Tags</h2>
+              <h2 className="text-lg font-semibold mb-2 text-white">Tags</h2>
               <div className="flex flex-wrap gap-2">
                 {clip.tags.map((tag) => (
                   <span
                     key={tag.id}
-                    className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm border border-blue-200"
+                    className="px-3 py-1 bg-[#007BFF]/20 text-[#007BFF] rounded-full text-sm border border-[#007BFF]/30"
                   >
-                    <span className="text-blue-600 capitalize font-medium">
+                    <span className="capitalize font-medium">
                       {tag.category.replace(/([A-Z])/g, ' $1').trim()}:
                     </span>{' '}
                     {tag.value}
