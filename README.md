@@ -2,6 +2,8 @@
 
 A modern video clip management system designed for organizing, tagging, and retrieving field hockey video content. Manage clips from local Windows file paths and YouTube URLs with powerful search and filtering capabilities.
 
+![Home Screen](assets/screenshot-home.png)
+
 ## Overview
 
 Field Hockey Video Library is an MVP application that enables rapid tagging, filtering, and retrieval of video content. The system supports two storage types:
