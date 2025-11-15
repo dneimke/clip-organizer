@@ -5,6 +5,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5059';
 export async function getClips(
   searchTerm?: string, 
   tagIds?: number[],
+  subfolders?: string[],
   sortBy?: string,
   sortOrder?: string,
   unclassifiedOnly?: boolean
@@ -13,6 +14,9 @@ export async function getClips(
   if (searchTerm) params.append('searchTerm', searchTerm);
   if (tagIds && tagIds.length > 0) {
     tagIds.forEach(id => params.append('tagIds', id.toString()));
+  }
+  if (subfolders && subfolders.length > 0) {
+    subfolders.forEach(subfolder => params.append('subfolders', subfolder));
   }
   if (sortBy) params.append('sortBy', sortBy);
   if (sortOrder) params.append('sortOrder', sortOrder);
@@ -170,6 +174,14 @@ export async function selectiveSync(request: SelectiveSyncRequest): Promise<Sync
   if (!response.ok) {
     const error = await response.text();
     throw new Error(error || 'Failed to perform selective sync');
+  }
+  return response.json();
+}
+
+export async function getSubfolders(): Promise<string[]> {
+  const response = await fetch(`${API_BASE_URL}/api/clips/subfolders`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch subfolders');
   }
   return response.json();
 }

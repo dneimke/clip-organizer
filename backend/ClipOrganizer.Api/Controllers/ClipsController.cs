@@ -43,6 +43,7 @@ public class ClipsController : ControllerBase
     public async Task<ActionResult<IEnumerable<ClipDto>>> GetClips(
         [FromQuery] string? searchTerm, 
         [FromQuery] List<int>? tagIds,
+        [FromQuery] List<string>? subfolders,
         [FromQuery] string? sortBy = "dateAdded",
         [FromQuery] string? sortOrder = "desc",
         [FromQuery] bool unclassifiedOnly = false)
@@ -81,6 +82,17 @@ public class ClipsController : ControllerBase
 
         var clips = await query.ToListAsync();
 
+        // Apply subfolder filter in memory (after loading from DB)
+        if (subfolders != null && subfolders.Any())
+        {
+            var rootFolder = await GetRootFolderPathAsync();
+            clips = clips.Where(c =>
+            {
+                var clipSubfolder = GetSubfolderForClip(c, rootFolder);
+                return subfolders.Contains(clipSubfolder, StringComparer.OrdinalIgnoreCase);
+            }).ToList();
+        }
+
         // Apply unclassified filter in memory (after loading from DB)
         if (unclassifiedOnly)
         {
@@ -88,6 +100,30 @@ public class ClipsController : ControllerBase
         }
 
         return Ok(clips.Select(c => MapToDto(c)));
+    }
+
+    [HttpGet("subfolders")]
+    public async Task<ActionResult<IEnumerable<string>>> GetSubfolders()
+    {
+        try
+        {
+            var clips = await _context.Clips.ToListAsync();
+            var rootFolder = await GetRootFolderPathAsync();
+            
+            var subfolders = clips
+                .Select(c => GetSubfolderForClip(c, rootFolder))
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(s => s)
+                .ToList();
+
+            return Ok(subfolders);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching subfolders");
+            return StatusCode(500, "An error occurred while fetching subfolders");
+        }
     }
 
     [HttpGet("unclassified")]
@@ -775,6 +811,82 @@ public class ClipsController : ControllerBase
         return clip.Tags.Count == 0 
             || string.IsNullOrWhiteSpace(clip.Description)
             || clip.Title == Path.GetFileNameWithoutExtension(clip.LocationString);
+    }
+
+    private async Task<string> GetRootFolderPathAsync()
+    {
+        // Try to get from database settings first
+        var setting = await _context.Settings
+            .FirstOrDefaultAsync(s => s.Key == RootFolderKey);
+
+        if (setting != null && !string.IsNullOrWhiteSpace(setting.Value))
+        {
+            return setting.Value;
+        }
+
+        // Fall back to appsettings.json
+        var appSettingsPath = _configuration["VideoLibrary:RootFolder"];
+        if (!string.IsNullOrWhiteSpace(appSettingsPath))
+        {
+            return appSettingsPath;
+        }
+
+        // Return empty string if not configured
+        return string.Empty;
+    }
+
+    private string GetRelativeSubfolder(string locationString, string rootFolder)
+    {
+        if (string.IsNullOrWhiteSpace(rootFolder) || string.IsNullOrWhiteSpace(locationString))
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            // Normalize paths for comparison (Windows is case-insensitive)
+            var normalizedLocation = Path.GetFullPath(locationString);
+            var normalizedRoot = Path.GetFullPath(rootFolder);
+
+            // Check if location starts with root folder
+            if (!normalizedLocation.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Empty;
+            }
+
+            // Get the directory containing the file
+            var fileDirectory = Path.GetDirectoryName(normalizedLocation);
+            if (string.IsNullOrWhiteSpace(fileDirectory))
+            {
+                return string.Empty;
+            }
+
+            // If fileDirectory equals rootFolder, the file is in the root (no subfolder)
+            if (fileDirectory.Equals(normalizedRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Empty;
+            }
+
+            // Get relative path from root folder
+            var relativePath = Path.GetRelativePath(normalizedRoot, fileDirectory);
+            
+            // Normalize path separators (use backslash for Windows)
+            return relativePath.Replace('/', '\\');
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
+    private string GetSubfolderForClip(Clip clip, string rootFolder)
+    {
+        if (clip.StorageType == StorageType.YouTube)
+        {
+            return "YouTube";
+        }
+
+        return GetRelativeSubfolder(clip.LocationString, rootFolder);
     }
 
     private ClipDto MapToDto(Clip clip)

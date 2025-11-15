@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Clip, Tag } from '@/types';
-import { getClips, getUnclassifiedClips } from '@/lib/api/clips';
+import { getClips, getUnclassifiedClips, getSubfolders } from '@/lib/api/clips';
 import { getTags } from '@/lib/api/tags';
 import SearchBar from '@/components/SearchBar';
 import FilterSidebar from '@/components/FilterSidebar';
@@ -17,6 +17,8 @@ export default function Home() {
   const [tagsByCategory, setTagsByCategory] = useState<Record<string, Tag[]>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+  const [selectedSubfolders, setSelectedSubfolders] = useState<string[]>([]);
+  const [availableSubfolders, setAvailableSubfolders] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<SortBy>('dateAdded');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [loading, setLoading] = useState(true);
@@ -30,6 +32,15 @@ export default function Home() {
       setTagsByCategory(tags);
     } catch (err) {
       console.error('Failed to load tags:', err);
+    }
+  }, []);
+
+  const loadSubfolders = useCallback(async () => {
+    try {
+      const subfolders = await getSubfolders();
+      setAvailableSubfolders(subfolders);
+    } catch (err) {
+      console.error('Failed to load subfolders:', err);
     }
   }, []);
 
@@ -48,6 +59,7 @@ export default function Home() {
       const fetchedClips = await getClips(
         searchTerm || undefined,
         selectedTagIds.length > 0 ? selectedTagIds : undefined,
+        selectedSubfolders.length > 0 ? selectedSubfolders : undefined,
         sortBy,
         sortOrder
       );
@@ -59,12 +71,13 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, selectedTagIds, sortBy, sortOrder]);
+  }, [searchTerm, selectedTagIds, selectedSubfolders, sortBy, sortOrder]);
 
   useEffect(() => {
     loadTags();
+    loadSubfolders();
     loadUnclassifiedCount();
-  }, [loadTags, loadUnclassifiedCount]);
+  }, [loadTags, loadSubfolders, loadUnclassifiedCount]);
 
   useEffect(() => {
     loadClips();
@@ -80,6 +93,14 @@ export default function Home() {
       prev.includes(tagId)
         ? prev.filter((id) => id !== tagId)
         : [...prev, tagId]
+    );
+  };
+
+  const handleSubfolderToggle = (subfolder: string) => {
+    setSelectedSubfolders((prev) =>
+      prev.includes(subfolder)
+        ? prev.filter((s) => s !== subfolder)
+        : [...prev, subfolder]
     );
   };
 
@@ -109,6 +130,9 @@ export default function Home() {
             tagsByCategory={tagsByCategory}
             selectedTagIds={selectedTagIds}
             onTagToggle={handleTagToggle}
+            subfolders={availableSubfolders}
+            selectedSubfolders={selectedSubfolders}
+            onSubfolderToggle={handleSubfolderToggle}
           />
 
           <div className="flex-1">
