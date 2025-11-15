@@ -7,8 +7,9 @@ import { getClips, getUnclassifiedClips, getSubfolders } from '@/lib/api/clips';
 import { getTags } from '@/lib/api/tags';
 import SearchBar from '@/components/SearchBar';
 import FilterSidebar from '@/components/FilterSidebar';
-import ClipList from '@/components/ClipList';
+import ClipList, { ViewMode } from '@/components/ClipList';
 import SortDropdown, { SortBy, SortOrder } from '@/components/SortDropdown';
+import ViewToggle from '@/components/ViewToggle';
 import Toast from '@/components/Toast';
 
 export default function Home() {
@@ -25,6 +26,13 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [unclassifiedCount, setUnclassifiedCount] = useState(0);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('clipViewMode');
+      return (saved === 'card' || saved === 'list') ? saved : 'card';
+    }
+    return 'card';
+  });
 
   const loadTags = useCallback(async () => {
     try {
@@ -109,6 +117,13 @@ export default function Home() {
     setSelectedSubfolders([]);
   };
 
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('clipViewMode', mode);
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-[#121212]">
@@ -122,12 +137,15 @@ export default function Home() {
               placeholder="Search clips by title..."
             />
           </div>
-          <SortDropdown
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            onSortByChange={setSortBy}
-            onSortOrderChange={setSortOrder}
-          />
+          <div className="flex items-center gap-4">
+            <ViewToggle viewMode={viewMode} onViewModeChange={handleViewModeChange} />
+            <SortDropdown
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSortByChange={setSortBy}
+              onSortOrderChange={setSortOrder}
+            />
+          </div>
         </div>
 
         <div className="flex gap-6">
@@ -151,7 +169,7 @@ export default function Home() {
                 {error}
               </div>
             ) : (
-              <ClipList clips={clips} />
+              <ClipList clips={clips} viewMode={viewMode} />
             )}
           </div>
         </div>
