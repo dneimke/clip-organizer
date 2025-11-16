@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Clip } from '@/types';
-import { getClip, deleteClip } from '@/lib/api/clips';
+import { getClip, deleteClip, setFavorite } from '@/lib/api/clips';
 import YouTubePlayer from '@/components/YouTubePlayer';
 import LocalClipViewer from '@/components/LocalClipViewer';
 import ClipForm from '@/components/ClipForm';
@@ -18,6 +18,7 @@ export default function ClipDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [favUpdating, setFavUpdating] = useState(false);
 
   const loadClip = useCallback(async () => {
     try {
@@ -36,6 +37,21 @@ export default function ClipDetailPage() {
   useEffect(() => {
     loadClip();
   }, [loadClip]);
+
+  const handleToggleFavorite = async () => {
+    if (!clip || favUpdating) return;
+    const next = !clip.isFavorite;
+    setClip({ ...clip, isFavorite: next });
+    setFavUpdating(true);
+    try {
+      await setFavorite(clip.id, next);
+    } catch {
+      // revert on failure
+      setClip({ ...clip, isFavorite: !next });
+    } finally {
+      setFavUpdating(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this clip?')) {
@@ -221,7 +237,34 @@ export default function ClipDetailPage() {
                 }`}>
                   {clip.storageType}
                 </span>
+                <button
+                  onClick={handleToggleFavorite}
+                  disabled={favUpdating}
+                  title={clip.isFavorite ? 'Remove from favourites' : 'Add to favourites'}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded bg-black/30 hover:bg-black/50 disabled:opacity-50 text-white border border-white/10"
+                >
+                  {clip.isFavorite ? (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#ef4444" className="w-4 h-4">
+                        <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.188 3 12.97 3 10.5 3 8.015 4.994 6 7.5 6A5.5 5.5 0 0112 8.243 5.5 5.5 0 0116.5 6C19.006 6 21 8.015 21 10.5c0 2.47-1.688 4.688-3.989 6.997a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.218l-.022.012-.007.003-.003.001a.75.75 0 01-.676 0l-.003-.001z" />
+                      </svg>
+                      <span className="text-sm">Favourited</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.8" className="w-4 h-4">
+                        <path d="M12 21s-7-4.5-9-8.5S5 3 8 6c2 2 4 2 4 2s2 0 4-2c3-3 7 0 5 6S12 21 12 21z" />
+                      </svg>
+                      <span className="text-sm">Add to favourites</span>
+                    </>
+                  )}
+                </button>
               </div>
+              {clip.description && clip.description.trim().length > 0 && (
+                <p className="mt-3 text-gray-300 leading-relaxed whitespace-pre-line">
+                  {clip.description}
+                </p>
+              )}
             </div>
             <div className="flex gap-2 flex-shrink-0">
               <button
