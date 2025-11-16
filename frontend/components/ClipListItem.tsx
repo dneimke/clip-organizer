@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Clip } from '@/types';
 
 interface ClipListItemProps {
@@ -30,30 +31,35 @@ export default function ClipListItem({ clip }: ClipListItemProps) {
             )}
             {clip.thumbnailPath ? (
               clip.storageType === 'YouTube' ? (
-                <img
+                <Image
                   src={clip.thumbnailPath}
                   alt={clip.title}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  unoptimized
                   onError={(e) => {
                     // Fallback to placeholder if image fails to load
                     const target = e.currentTarget;
                     target.style.display = 'none';
-                    const placeholder = target.parentElement?.querySelector('.placeholder-icon') as HTMLElement;
+                    const parent = target.parentElement;
+                    const placeholder = parent?.querySelector('.placeholder-icon') as HTMLElement;
                     if (placeholder) {
                       placeholder.classList.remove('hidden');
                     }
                   }}
                 />
               ) : (
-                <img
+                <Image
                   src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5059'}/api/clips/${clip.id}/thumbnail`}
                   alt={clip.title}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                   onError={(e) => {
                     // Fallback to placeholder if image fails to load
                     const target = e.currentTarget;
                     target.style.display = 'none';
-                    const placeholder = target.parentElement?.querySelector('.placeholder-icon') as HTMLElement;
+                    const parent = target.parentElement;
+                    const placeholder = parent?.querySelector('.placeholder-icon') as HTMLElement;
                     if (placeholder) {
                       placeholder.classList.remove('hidden');
                     }
