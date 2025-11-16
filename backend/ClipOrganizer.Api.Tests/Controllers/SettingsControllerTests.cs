@@ -151,9 +151,11 @@ public class SettingsControllerTests : IDisposable
     public async Task SetRootFolder_NonExistentDirectory_ReturnsBadRequest()
     {
         // Arrange
+        // Use platform-agnostic absolute path that doesn't exist
+        var nonExistentPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "NonExistent");
         var dto = new RootFolderSettingDto
         {
-            RootFolderPath = @"C:\NonExistent\Directory"
+            RootFolderPath = nonExistentPath
         };
 
         // Act

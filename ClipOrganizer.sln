@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend", "backend", "{DACBBB76-FFFD-4CA3-8206-DC8AD24A0AFB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClipOrganizer.Api", "backend\ClipOrganizer.Api\ClipOrganizer.Api.csproj", "{1FB4AC1B-9461-4690-83C3-079DA4059FE3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClipOrganizer.Api.Tests", "backend\ClipOrganizer.Api.Tests\ClipOrganizer.Api.Tests.csproj", "{F2B074FC-8516-40B5-B02B-7577644FB0BB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1FB4AC1B-9461-4690-83C3-079DA4059FE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1FB4AC1B-9461-4690-83C3-079DA4059FE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1FB4AC1B-9461-4690-83C3-079DA4059FE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1FB4AC1B-9461-4690-83C3-079DA4059FE3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F2B074FC-8516-40B5-B02B-7577644FB0BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F2B074FC-8516-40B5-B02B-7577644FB0BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F2B074FC-8516-40B5-B02B-7577644FB0BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F2B074FC-8516-40B5-B02B-7577644FB0BB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1FB4AC1B-9461-4690-83C3-079DA4059FE3} = {DACBBB76-FFFD-4CA3-8206-DC8AD24A0AFB}
+		{F2B074FC-8516-40B5-B02B-7577644FB0BB} = {DACBBB76-FFFD-4CA3-8206-DC8AD24A0AFB}
+	EndGlobalSection
+EndGlobal
