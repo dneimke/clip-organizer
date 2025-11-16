@@ -330,26 +330,15 @@ clip-organizer/
 
 ## Usage
 
-### Adding a Clip
+### Adding Clips (via Filesystem Sync)
 
-1. Click "Add New Clip" or navigate to `/clips/new`
-2. **Using AI (Recommended)**:
-   - Enter your notes about the clip in the "Your Notes about the Clip" field
-   - Click "Generate with AI" to automatically generate:
-     - Title
-     - Description
-     - Suggested tags (pre-selected)
-   - Review and edit the AI-generated content as needed
-   - Enter the location (file path or YouTube URL)
-   - Click "Save Clip"
-3. **Manual Entry**:
-   - Enter the location (file path or YouTube URL)
-   - Manually add title, description, and tags
-   - Click "Save Clip"
+Add video files to your configured root folder on disk, then run a sync:
 
-**Storage Types**:
-- **Local**: Enter a Windows file path (e.g., `C:\Videos\clip.mp4`)
-- **YouTube**: Enter a YouTube URL or video ID
+1. In the app, click "Quick Sync" (top bar), or open Sync from the menu
+2. The backend scans the filesystem, adds new files as clips, and removes missing ones
+3. After sync, use Edit on a clip to add title/description and tags
+
+You can still use "Generate with AI" on the Edit form to suggest title, description, and tags from your notes.
 
 **Tag Categories**:
 - Skill/Tactic (e.g., Flick, PC Attack)
@@ -437,7 +426,6 @@ The API exposes the following main endpoints:
 - `GET /api/clips` - Get all clips (with optional search and filter)
 - `GET /api/clips/{id}` - Get a specific clip
 - `GET /api/clips/{id}/video` - Stream video file for local clips
-- `POST /api/clips` - Create a new clip
 - `PUT /api/clips/{id}` - Update a clip
 - `POST /api/clips/generate-metadata` - Generate AI metadata (title, description, tags) from notes
 - `POST /api/clips/regenerate-thumbnails` - Regenerate thumbnails for existing clips

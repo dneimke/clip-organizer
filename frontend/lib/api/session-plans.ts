@@ -83,3 +83,51 @@ export async function deleteSessionPlan(id: number): Promise<void> {
   }
 }
 
+export async function addClipToCollection(planId: number, clipId: number): Promise<SessionPlan> {
+  const response = await fetch(`${API_BASE_URL}/api/SessionPlans/${planId}/clips`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ clipId }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(error || 'Failed to add clip to collection');
+  }
+
+  return response.json();
+}
+
+export async function removeClipFromCollection(planId: number, clipId: number): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/SessionPlans/${planId}/clips/${clipId}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(error || 'Failed to remove clip from collection');
+  }
+}
+
+export async function updateCollection(
+  id: number,
+  updates: { title?: string; summary?: string }
+): Promise<SessionPlan> {
+  const response = await fetch(`${API_BASE_URL}/api/SessionPlans/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(updates),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(error || 'Failed to update collection');
+  }
+
+  return response.json();
+}
+

@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { CreateClipDto, Tag, NewTag } from '@/types';
-import { createClip, updateClip, generateClipMetadata } from '@/lib/api/clips';
+import { UpdateClipDto, Tag, NewTag } from '@/types';
+import { updateClip, generateClipMetadata } from '@/lib/api/clips';
 import { getTags, getTagCategories } from '@/lib/api/tags';
 
 interface ClipFormProps {
@@ -109,7 +109,11 @@ export default function ClipForm({ clipId, initialLocationString = '', initialTi
     setError(null);
 
     try {
-      const dto: CreateClipDto = {
+      if (!clipId) {
+        throw new Error('Clip ID is required for editing');
+      }
+
+      const dto: UpdateClipDto = {
         locationString,
         title: title || undefined,
         description: description || undefined,
@@ -118,11 +122,7 @@ export default function ClipForm({ clipId, initialLocationString = '', initialTi
         newTags: newTags.length > 0 ? newTags : undefined,
       };
 
-      if (clipId) {
-        await updateClip(clipId, dto);
-      } else {
-        await createClip(dto);
-      }
+      await updateClip(clipId, dto);
 
       // Reload tags to show newly created tags
       await loadTags();
@@ -384,7 +384,7 @@ export default function ClipForm({ clipId, initialLocationString = '', initialTi
           disabled={loading}
           className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm hover:shadow-md"
         >
-          {loading ? 'Saving...' : clipId ? 'Update' : 'Save'} Clip
+          {loading ? 'Saving...' : 'Update'} Clip
         </button>
       </div>
     </form>

@@ -39,6 +39,12 @@ const nextConfig: NextConfig = {
       'img.youtube.com',
     ],
   },
+  async rewrites() {
+    return [
+      { source: '/collections', destination: '/plans' },
+      { source: '/collections/:id', destination: '/plans/:id' },
+    ];
+  },
 };
 
 export default nextConfig;

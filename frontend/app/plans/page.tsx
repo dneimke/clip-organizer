@@ -24,7 +24,7 @@ export default function PlansPage() {
       setPlans(fetchedPlans);
       setError(null);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to load session plans');
+      setError(err instanceof Error ? err.message : 'Failed to load collections');
       console.error('Error loading plans:', err);
     } finally {
       setLoading(false);
@@ -32,7 +32,7 @@ export default function PlansPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this session plan?')) {
+    if (!confirm('Are you sure you want to delete this collection?')) {
       return;
     }
 
@@ -41,7 +41,7 @@ export default function PlansPage() {
       await deleteSessionPlan(id);
       setPlans((prev) => prev.filter((p) => p.id !== id));
       setToast({
-        message: 'Session plan deleted successfully',
+        message: 'Collection deleted successfully',
         type: 'success',
       });
     } catch (err: unknown) {
@@ -66,7 +66,7 @@ export default function PlansPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#121212] flex items-center justify-center">
-        <p className="text-[#007BFF]">Loading session plans...</p>
+        <p className="text-[#007BFF]">Loading collections...</p>
       </div>
     );
   }
@@ -76,7 +76,7 @@ export default function PlansPage() {
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-white">Session Plans</h1>
+          <h1 className="text-3xl font-bold text-white">Collections</h1>
         </div>
 
         {error && (
@@ -88,9 +88,9 @@ export default function PlansPage() {
         {/* Plans List */}
         {plans.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-400 text-lg mb-4">No session plans yet</p>
+            <p className="text-gray-400 text-lg mb-4">No collections yet</p>
             <p className="text-gray-500 text-sm">
-              Create your first session plan using the &quot;Plan a Session&quot; button in the header
+              Create your first collection using the &quot;New Collection&quot; button in the header
             </p>
           </div>
         ) : (
@@ -137,7 +137,7 @@ export default function PlansPage() {
                   href={`/plans/${plan.id}`}
                   className="mt-4 px-4 py-2 bg-[#007BFF] text-white rounded-lg hover:bg-[#0056b3] transition-colors text-center font-medium"
                 >
-                  View Plan
+                  View Collection
                 </Link>
               </div>
             ))}

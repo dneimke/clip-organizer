@@ -1,4 +1,4 @@
-import { Clip, CreateClipDto, GenerateMetadataDto, GenerateMetadataResponseDto, BulkUploadRequest, BulkUploadResponse, SyncRequest, SyncResponse, SyncPreviewResponse, SelectiveSyncRequest, QueryParseResult, ParseQueryDto } from '@/types';
+import { Clip, UpdateClipDto, GenerateMetadataDto, GenerateMetadataResponseDto, SyncRequest, SyncResponse, SyncPreviewResponse, SelectiveSyncRequest, QueryParseResult, ParseQueryDto } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5059';
 
@@ -54,22 +54,7 @@ export async function getClip(id: number): Promise<Clip> {
   return response.json();
 }
 
-export async function createClip(dto: CreateClipDto): Promise<Clip> {
-  const response = await fetch(`${API_BASE_URL}/api/clips`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(dto),
-  });
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error || 'Failed to create clip');
-  }
-  return response.json();
-}
-
-export async function updateClip(id: number, dto: CreateClipDto): Promise<Clip> {
+export async function updateClip(id: number, dto: UpdateClipDto): Promise<Clip> {
   const response = await fetch(`${API_BASE_URL}/api/clips/${id}`, {
     method: 'PUT',
     headers: {
@@ -104,22 +89,6 @@ export async function generateClipMetadata(dto: GenerateMetadataDto): Promise<Ge
   if (!response.ok) {
     const error = await response.text();
     throw new Error(error || 'Failed to generate metadata');
-  }
-  return response.json();
-}
-
-export async function bulkUploadClips(filePaths: string[]): Promise<BulkUploadResponse> {
-  const request: BulkUploadRequest = { filePaths };
-  const response = await fetch(`${API_BASE_URL}/api/clips/bulk-upload`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(request),
-  });
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error || 'Failed to upload clips');
   }
   return response.json();
 }

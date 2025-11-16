@@ -29,7 +29,7 @@ export interface Clip {
   isFavorite: boolean;
 }
 
-export interface CreateClipDto {
+export interface UpdateClipDto {
   locationString: string;
   title?: string;
   description?: string;
@@ -57,26 +57,6 @@ export interface CreateTagDto {
 export interface NewTag {
   category: string;
   value: string;
-}
-
-export interface BulkUploadRequest {
-  filePaths: string[];
-}
-
-export interface BulkUploadItem {
-  clipId: number;
-  filePath: string;
-  title: string;
-}
-
-export interface BulkUploadError {
-  filePath: string;
-  errorMessage: string;
-}
-
-export interface BulkUploadResponse {
-  successes: BulkUploadItem[];
-  failures: BulkUploadError[];
 }
 
 

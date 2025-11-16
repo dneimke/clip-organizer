@@ -266,119 +266,7 @@ public class ClipsControllerTests : IDisposable
 
     #endregion
 
-    #region CreateClip Tests
-
-    [Fact]
-    public async Task CreateClip_YouTubeUrl_CreatesYouTubeClip()
-    {
-        // Arrange
-        var dto = new CreateClipDto
-        {
-            LocationString = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            Title = "Test Video"
-        };
-
-        _mockValidationService.Setup(x => x.DetermineStorageType(dto.LocationString))
-            .Returns(StorageType.YouTube);
-        _mockValidationService.Setup(x => x.ValidateYouTubeUrl(dto.LocationString))
-            .Returns(true);
-        _mockYouTubeService.Setup(x => x.GetVideoMetadataAsync(dto.LocationString))
-            .ReturnsAsync(("Video Title", 300, "dQw4w9WgXcQ"));
-        _mockYouTubeService.Setup(x => x.GetThumbnailUrl("dQw4w9WgXcQ"))
-            .Returns("https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg");
-
-        // Act
-        var result = await _controller.CreateClip(dto);
-
-        // Assert
-        var createdResult = result.Result.Should().BeOfType<CreatedAtActionResult>().Subject;
-        var clipDto = createdResult.Value.Should().BeOfType<ClipDto>().Subject;
-        clipDto.StorageType.Should().Be("YouTube");
-        clipDto.LocationString.Should().Be("dQw4w9WgXcQ");
-        
-        var clips = await _context.Clips.ToListAsync();
-        clips.Should().HaveCount(1);
-    }
-
-    [Fact]
-    public async Task CreateClip_LocalFile_CreatesLocalClip()
-    {
-        // Arrange
-        var tempFile = CreateTempFile("test.mp4");
-        var dto = new CreateClipDto
-        {
-            LocationString = tempFile,
-            Title = "Local Clip"
-        };
-
-        _mockValidationService.Setup(x => x.DetermineStorageType(dto.LocationString))
-            .Returns(StorageType.Local);
-        _mockValidationService.Setup(x => x.ValidateLocalPath(dto.LocationString))
-            .Returns(true);
-        _mockThumbnailService.Setup(x => x.GenerateThumbnailAsync(tempFile, It.IsAny<int>()))
-            .ReturnsAsync((string?)null);
-
-        // Act
-        var result = await _controller.CreateClip(dto);
-
-        // Assert
-        var createdResult = result.Result.Should().BeOfType<CreatedAtActionResult>().Subject;
-        var clipDto = createdResult.Value.Should().BeOfType<ClipDto>().Subject;
-        clipDto.StorageType.Should().Be("Local");
-        
-        var clips = await _context.Clips.ToListAsync();
-        clips.Should().HaveCount(1);
-    }
-
-    [Fact]
-    public async Task CreateClip_InvalidLocationString_ReturnsBadRequest()
-    {
-        // Arrange
-        var dto = new CreateClipDto
-        {
-            LocationString = string.Empty
-        };
-
-        // Act
-        var result = await _controller.CreateClip(dto);
-
-        // Assert
-        result.Result.Should().BeOfType<BadRequestObjectResult>();
-    }
-
-    [Fact]
-    public async Task CreateClip_WithTags_AssociatesTags()
-    {
-        // Arrange
-        var tempFile = CreateTempFile("test.mp4");
-        var tag = new TagBuilder().WithId(1).WithCategory(TagCategory.SkillTactic).WithValue("Flick").Build();
-        _context.Tags.Add(tag);
-        await _context.SaveChangesAsync();
-
-        var dto = new CreateClipDto
-        {
-            LocationString = tempFile,
-            TagIds = new List<int> { 1 }
-        };
-
-        _mockValidationService.Setup(x => x.DetermineStorageType(dto.LocationString))
-            .Returns(StorageType.Local);
-        _mockValidationService.Setup(x => x.ValidateLocalPath(dto.LocationString))
-            .Returns(true);
-        _mockThumbnailService.Setup(x => x.GenerateThumbnailAsync(tempFile, It.IsAny<int>()))
-            .ReturnsAsync((string?)null);
-
-        // Act
-        var result = await _controller.CreateClip(dto);
-
-        // Assert
-        var createdResult = result.Result.Should().BeOfType<CreatedAtActionResult>().Subject;
-        var clipDto = createdResult.Value.Should().BeOfType<ClipDto>().Subject;
-        clipDto.Tags.Should().HaveCount(1);
-        clipDto.Tags[0].Id.Should().Be(1);
-    }
-
-    #endregion
+    // CreateClip tests removed as creation is no longer supported
 
     #region UpdateClip Tests
 
@@ -396,7 +284,7 @@ public class ClipsControllerTests : IDisposable
         _context.Clips.Add(clip);
         await _context.SaveChangesAsync();
 
-        var dto = new CreateClipDto
+        var dto = new UpdateClipDto
         {
             LocationString = tempFile,
             Title = "New Title",
@@ -422,7 +310,7 @@ public class ClipsControllerTests : IDisposable
     public async Task UpdateClip_NonExistentClip_ReturnsNotFound()
     {
         // Arrange
-        var dto = new CreateClipDto { LocationString = "test.mp4" };
+        var dto = new UpdateClipDto { LocationString = "test.mp4" };
 
         // Act
         var result = await _controller.UpdateClip(999, dto);
@@ -465,87 +353,6 @@ public class ClipsControllerTests : IDisposable
     #endregion
 
     #region BulkUpload Tests
-
-    [Fact]
-    public async Task BulkUpload_ValidFiles_ProcessesSuccessfully()
-    {
-        // Arrange
-        var tempFile1 = CreateTempFile("test1.mp4");
-        var tempFile2 = CreateTempFile("test2.mp4");
-        var request = new BulkUploadRequestDto
-        {
-            FilePaths = new List<string> { tempFile1, tempFile2 }
-        };
-
-        _mockValidationService.Setup(x => x.ValidateLocalPath(It.IsAny<string>()))
-            .Returns(true);
-        _mockThumbnailService.Setup(x => x.GenerateThumbnailAsync(It.IsAny<string>(), It.IsAny<int>()))
-            .ReturnsAsync((string?)null);
-
-        // Act
-        var result = await _controller.BulkUpload(request);
-
-        // Assert
-        var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-        var response = okResult.Value.Should().BeOfType<BulkUploadResponseDto>().Subject;
-        response.Successes.Should().HaveCount(2);
-        response.Failures.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task BulkUpload_DuplicateFiles_AddsToFailures()
-    {
-        // Arrange
-        var tempFile = CreateTempFile("test.mp4");
-        var existingClip = new ClipBuilder()
-            .WithTitle("Existing")
-            .WithStorageType(StorageType.Local)
-            .WithLocationString(tempFile)
-            .Build();
-        _context.Clips.Add(existingClip);
-        await _context.SaveChangesAsync();
-
-        var request = new BulkUploadRequestDto
-        {
-            FilePaths = new List<string> { tempFile }
-        };
-
-        _mockValidationService.Setup(x => x.ValidateLocalPath(tempFile))
-            .Returns(true);
-
-        // Act
-        var result = await _controller.BulkUpload(request);
-
-        // Assert
-        var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-        var response = okResult.Value.Should().BeOfType<BulkUploadResponseDto>().Subject;
-        response.Failures.Should().HaveCount(1);
-        response.Failures[0].ErrorMessage.Should().Contain("already exists");
-    }
-
-    [Fact]
-    public async Task BulkUpload_InvalidFileExtension_AddsToFailures()
-    {
-        // Arrange
-        var tempFile = CreateTempFile("test.txt");
-        var request = new BulkUploadRequestDto
-        {
-            FilePaths = new List<string> { tempFile }
-        };
-
-        _mockValidationService.Setup(x => x.ValidateLocalPath(tempFile))
-            .Returns(true);
-
-        // Act
-        var result = await _controller.BulkUpload(request);
-
-        // Assert
-        var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-        var response = okResult.Value.Should().BeOfType<BulkUploadResponseDto>().Subject;
-        response.Failures.Should().HaveCount(1);
-        response.Failures[0].ErrorMessage.Should().Contain("Invalid video file extension");
-    }
-
     #endregion
 
     #region Sync Tests

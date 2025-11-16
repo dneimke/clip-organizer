@@ -246,5 +246,142 @@ public class SessionPlansController : ControllerBase
             return StatusCode(500, "An error occurred while deleting the session plan");
         }
     }
+
+    // Update a session plan (rename or update summary)
+    [HttpPut("{id}")]
+    public async Task<ActionResult<SessionPlanDto>> UpdateSessionPlan(int id, [FromBody] UpdateSessionPlanDto dto)
+    {
+        if (dto == null || (string.IsNullOrWhiteSpace(dto.Title) && string.IsNullOrWhiteSpace(dto.Summary)))
+        {
+            return BadRequest("Provide a new title and/or summary");
+        }
+
+        try
+        {
+            var plan = await _context.SessionPlans
+                .Include(sp => sp.Clips)
+                .FirstOrDefaultAsync(sp => sp.Id == id);
+
+            if (plan == null)
+            {
+                return NotFound();
+            }
+
+            if (!string.IsNullOrWhiteSpace(dto.Title))
+            {
+                plan.Title = dto.Title.Trim();
+            }
+            if (dto.Summary != null)
+            {
+                plan.Summary = dto.Summary;
+            }
+
+            await _context.SaveChangesAsync();
+
+            var result = new SessionPlanDto
+            {
+                Id = plan.Id,
+                Title = plan.Title,
+                Summary = plan.Summary,
+                CreatedDate = plan.CreatedDate,
+                ClipIds = plan.Clips.Select(c => c.Id).ToList()
+            };
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating session plan");
+            return StatusCode(500, "An error occurred while updating the session plan");
+        }
+    }
+
+    // Add a clip to a session plan (collection)
+    [HttpPost("{id}/clips")]
+    public async Task<ActionResult<SessionPlanDto>> AddClipToSessionPlan(int id, [FromBody] AddClipToSessionPlanDto dto)
+    {
+        if (dto == null || dto.ClipId <= 0)
+        {
+            return BadRequest("A valid clipId is required");
+        }
+
+        try
+        {
+            var plan = await _context.SessionPlans
+                .Include(sp => sp.Clips)
+                .FirstOrDefaultAsync(sp => sp.Id == id);
+
+            if (plan == null)
+            {
+                return NotFound("Session plan not found");
+            }
+
+            var clip = await _context.Clips.FindAsync(dto.ClipId);
+            if (clip == null)
+            {
+                return BadRequest("Invalid clipId");
+            }
+
+            if (plan.Clips.Any(c => c.Id == dto.ClipId))
+            {
+                return Conflict("Clip already exists in this collection");
+            }
+
+            plan.Clips.Add(clip);
+            await _context.SaveChangesAsync();
+
+            var result = new SessionPlanDto
+            {
+                Id = plan.Id,
+                Title = plan.Title,
+                Summary = plan.Summary,
+                CreatedDate = plan.CreatedDate,
+                ClipIds = plan.Clips.Select(c => c.Id).ToList()
+            };
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding clip to session plan");
+            return StatusCode(500, "An error occurred while adding the clip to the session plan");
+        }
+    }
+
+    // Remove a clip from a session plan (collection)
+    [HttpDelete("{id}/clips/{clipId}")]
+    public async Task<IActionResult> RemoveClipFromSessionPlan(int id, int clipId)
+    {
+        if (clipId <= 0)
+        {
+            return BadRequest("A valid clipId is required");
+        }
+
+        try
+        {
+            var plan = await _context.SessionPlans
+                .Include(sp => sp.Clips)
+                .FirstOrDefaultAsync(sp => sp.Id == id);
+
+            if (plan == null)
+            {
+                return NotFound("Session plan not found");
+            }
+
+            var existing = plan.Clips.FirstOrDefault(c => c.Id == clipId);
+            if (existing != null)
+            {
+                plan.Clips.Remove(existing);
+                await _context.SaveChangesAsync();
+            }
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing clip from session plan");
+            return StatusCode(500, "An error occurred while removing the clip from the session plan");
+        }
+    }
 }
 

@@ -46,20 +46,14 @@ For YouTube clips, thumbnails are handled differently:
 
 Thumbnails are automatically generated in the following scenarios:
 
-1. **Creating a New Clip**: When a clip is created via `POST /api/clips`
-   - Local files: Thumbnail is generated immediately after clip creation
-   - YouTube videos: Thumbnail URL is set during clip creation
+1. **Filesystem Sync**: When syncing clips from the filesystem
+   - Thumbnails are generated for newly discovered local clips
+   - YouTube clips have thumbnail URLs set based on the video ID
 
 2. **Updating a Clip**: When a clip's location is updated via `PUT /api/clips/{id}`
    - If the location changes, the old thumbnail is deleted and a new one is generated
 
-3. **Bulk Upload**: When clips are added via bulk upload
-   - Thumbnails are generated for each new local clip
-
-4. **Filesystem Sync**: When syncing clips from the filesystem
-   - Thumbnails are generated for newly discovered local clips
-
-5. **Manual Regeneration**: Via `POST /api/clips/regenerate-thumbnails`
+3. **Manual Regeneration**: Via `POST /api/clips/regenerate-thumbnails`
    - Can regenerate thumbnails for existing clips (see below)
 
 ## Regenerating Thumbnails

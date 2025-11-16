@@ -98,7 +98,7 @@ export default function SessionPlanModal({ isOpen, onClose, onPlanSaved }: Sessi
         setPlanClips(matchingClips);
       }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to generate session plan';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to generate collection';
       setError(errorMessage);
       setToast({
         message: errorMessage,
@@ -132,7 +132,7 @@ export default function SessionPlanModal({ isOpen, onClose, onPlanSaved }: Sessi
     try {
       await createSessionPlan(generatedPlan.title, generatedPlan.summary, generatedPlan.clipIds);
       setToast({
-        message: 'Session plan saved successfully!',
+        message: 'Collection saved successfully!',
         type: 'success',
       });
       onPlanSaved?.();
@@ -140,7 +140,7 @@ export default function SessionPlanModal({ isOpen, onClose, onPlanSaved }: Sessi
         onClose();
       }, 1000);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to save session plan';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save collection';
       setError(errorMessage);
       setToast({
         message: errorMessage,
@@ -192,7 +192,7 @@ export default function SessionPlanModal({ isOpen, onClose, onPlanSaved }: Sessi
           <div className="p-6">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Plan a Session</h2>
+              <h2 className="text-2xl font-bold text-white">Create Collection</h2>
               <button
                 onClick={onClose}
                 className="text-gray-400 hover:text-white transition-colors"

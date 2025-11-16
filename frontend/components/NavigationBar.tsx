@@ -118,9 +118,23 @@ export default function NavigationBar() {
             <Link 
               href="/"
               className="text-2xl sm:text-3xl font-bold text-white hover:text-[#007BFF] transition-colors flex-shrink-0"
-              aria-label="Clip AI - Home"
+              aria-label="Clip Organizer - Home"
             >
-              Clip AI
+              <span className="inline-flex items-center gap-2">
+                <svg
+                  className="w-7 h-7"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M21.44 11.05l-7.78 7.78a5.5 5.5 0 01-7.78-7.78l8.49-8.49a3.5 3.5 0 114.95 4.95l-8.49 8.49a1.5 1.5 0 11-2.12-2.12l7.78-7.78" />
+                </svg>
+                <span>Clip Organizer</span>
+              </span>
             </Link>
             
             {/* Primary Actions - Always Visible */}
@@ -143,30 +157,15 @@ export default function NavigationBar() {
               <button
                 onClick={() => setIsSessionPlanModalOpen(true)}
                 className="px-4 py-2 bg-[#007BFF] text-white rounded-lg hover:bg-[#0056b3] transition-colors font-medium flex items-center gap-2"
-                aria-label="Plan a session"
+                aria-label="Create collection"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                <span className="hidden sm:inline">Plan a Session</span>
+                <span className="hidden sm:inline">New Collection</span>
               </button>
               
-              {/* New Clip - Primary Action */}
-              <Link
-                href="/clips/new"
-                className={`px-4 py-2 rounded-lg transition-colors font-medium flex items-center gap-2 ${
-                  isActive('/clips/new')
-                    ? 'bg-[#007BFF] text-white ring-2 ring-[#007BFF] ring-offset-2 ring-offset-[#121212]'
-                    : 'bg-[#007BFF] text-white hover:bg-[#0056b3]'
-                }`}
-                aria-label="Add new clip"
-                aria-current={isActive('/clips/new') ? 'page' : undefined}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                <span className="hidden sm:inline">New Clip</span>
-              </Link>
+              
               
               {/* Hamburger Menu - Secondary Actions */}
               <div className="relative" ref={menuRef}>
@@ -198,15 +197,6 @@ export default function NavigationBar() {
                 
                 {menuOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-[#1a1a1a] border border-[#303030] rounded-lg shadow-xl py-2 z-50">
-                    <MenuLink
-                      href="/clips/bulk-upload"
-                      icon={
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                        </svg>
-                      }
-                      label="Bulk Upload"
-                    />
                     <MenuLink
                       href="/browse"
                       icon={
@@ -250,7 +240,7 @@ export default function NavigationBar() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
                       }
-                      label="Session Plans"
+                      label="Collections"
                     />
                     <div className="border-t border-[#303030] my-2" />
                     <MenuLink

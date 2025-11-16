@@ -1,6 +1,6 @@
 namespace ClipOrganizer.Api.DTOs;
 
-public class CreateClipDto
+public class UpdateClipDto
 {
     public string LocationString { get; set; } = string.Empty;
     public string? Title { get; set; }
@@ -9,4 +9,5 @@ public class CreateClipDto
     public List<int> TagIds { get; set; } = new();
     public List<NewTagDto>? NewTags { get; set; }
 }
+
 

@@ -200,18 +200,17 @@ For production or more secure setups, you can use environment variables instead 
 
 ## How It Works
 
-### Adding a YouTube Clip
+### Handling YouTube Clips
 
-1. **User Input**: When creating a new clip, provide a YouTube URL in the location field
-2. **URL Validation**: The system validates the URL format using regex patterns
-3. **Video ID Extraction**: The service extracts the 11-character video ID from the URL
-4. **Metadata Fetching**: The YouTube Data API is called to retrieve:
+When a clip's location is set to a YouTube URL (e.g., during an update), the system:
+1. Validates the URL format
+2. Extracts the 11-character video ID
+3. Fetches metadata via the YouTube Data API:
    - Video title
-   - Video duration (in seconds)
-   - Video ID (for storage)
-5. **Storage**: The clip is saved with:
+   - Video duration (seconds)
+4. Stores normalized values:
    - `StorageType = YouTube`
-   - `LocationString = videoId` (only the 11-character ID, not the full URL)
+   - `LocationString = videoId` (the 11-character ID, not the full URL)
    - `Title = video title` (or user-provided title if specified)
    - `Duration = duration in seconds`
 

@@ -87,18 +87,6 @@ Content-Type: {{ContentType}}
   "notes": "This clip shows a penalty corner attack with a successful flick into the top corner"
 }
 
-### Bulk upload clips
-POST {{ClipOrganizer.Api_HostAddress}}/api/clips/bulk-upload
-Content-Type: {{ContentType}}
-
-{
-  "filePaths": [
-    "C:\\Videos\\clip1.mp4",
-    "C:\\Videos\\clip2.mp4",
-    "C:\\Videos\\clip3.mp4"
-  ]
-}
-
 ###############################################
 # TAGS ENDPOINTS
 ###############################################
