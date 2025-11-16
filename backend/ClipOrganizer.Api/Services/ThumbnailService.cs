@@ -1,35 +1,34 @@
 using FFMpegCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using System.Drawing;
 using ClipOrganizer.Api.Helpers;
+using ClipOrganizer.Api.Data;
 
 namespace ClipOrganizer.Api.Services;
 
 public class ThumbnailService : IThumbnailService
 {
-    private readonly string _thumbnailsDirectory;
+    private readonly IWebHostEnvironment _env;
     private readonly ILogger<ThumbnailService> _logger;
     private readonly IConfiguration _configuration;
+    private readonly ClipDbContext _context;
     private static bool _ffmpegConfigured = false;
     private static readonly object _configLock = new object();
     private const int ThumbnailWidth = 320;
     private const int ThumbnailHeight = 180;
+    private const string RootFolderKey = "VideoLibrary.RootFolder";
 
-    public ThumbnailService(IWebHostEnvironment env, IConfiguration configuration, ILogger<ThumbnailService> logger)
+    public ThumbnailService(IWebHostEnvironment env, IConfiguration configuration, ILogger<ThumbnailService> logger, ClipDbContext context)
     {
-        _thumbnailsDirectory = Path.Combine(env.ContentRootPath, "thumbnails");
+        _env = env;
         _configuration = configuration;
         _logger = logger;
-        
-        // Ensure thumbnails directory exists
-        if (!Directory.Exists(_thumbnailsDirectory))
-        {
-            Directory.CreateDirectory(_thumbnailsDirectory);
-        }
+        _context = context;
 
         // Configure FFmpeg path if specified
         ConfigureFFmpeg();
@@ -113,7 +112,7 @@ public class ThumbnailService : IThumbnailService
                 return null;
             }
 
-            var thumbnailPath = GetThumbnailPath(clipId);
+            var thumbnailPath = await GetThumbnailPathAsync(clipId);
             
             // Use FFmpeg to extract frame (extract at full size, resize with ImageSharp)
             // SnapshotAsync signature: (inputPath, outputPath, size, captureTime)
@@ -201,9 +200,51 @@ public class ThumbnailService : IThumbnailService
         }
     }
 
-    public string GetThumbnailPath(int clipId)
+    public async Task<string> GetThumbnailPathAsync(int clipId)
     {
-        return Path.Combine(_thumbnailsDirectory, $"{clipId}.jpg");
+        var rootFolder = await GetRootFolderPathAsync();
+        
+        // If Root Folder Path is not configured, fall back to ContentRootPath for backward compatibility
+        string thumbnailsDirectory;
+        if (string.IsNullOrWhiteSpace(rootFolder))
+        {
+            _logger.LogWarning("Root Folder Path is not configured. Using ContentRootPath as fallback for thumbnails.");
+            thumbnailsDirectory = Path.Combine(_env.ContentRootPath, "thumbnails");
+        }
+        else
+        {
+            thumbnailsDirectory = Path.Combine(rootFolder, "thumbnails");
+        }
+        
+        // Ensure thumbnails directory exists
+        if (!Directory.Exists(thumbnailsDirectory))
+        {
+            Directory.CreateDirectory(thumbnailsDirectory);
+        }
+        
+        return Path.Combine(thumbnailsDirectory, $"{clipId}.jpg");
+    }
+
+    private async Task<string> GetRootFolderPathAsync()
+    {
+        // Try to get from database settings first
+        var setting = await _context.Settings
+            .FirstOrDefaultAsync(s => s.Key == RootFolderKey);
+
+        if (setting != null && !string.IsNullOrWhiteSpace(setting.Value))
+        {
+            return setting.Value;
+        }
+
+        // Fall back to appsettings.json
+        var appSettingsPath = _configuration["VideoLibrary:RootFolder"];
+        if (!string.IsNullOrWhiteSpace(appSettingsPath))
+        {
+            return appSettingsPath;
+        }
+
+        // Return empty string if not configured
+        return string.Empty;
     }
 }
 

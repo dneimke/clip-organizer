@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using ClipOrganizer.Api.Data;
 using ClipOrganizer.Api.DTOs;
@@ -22,6 +23,7 @@ public class ClipsController : ControllerBase
     private readonly IThumbnailService _thumbnailService;
     private readonly IConfiguration _configuration;
     private readonly ILogger<ClipsController> _logger;
+    private readonly IWebHostEnvironment _env;
     private const string RootFolderKey = "VideoLibrary.RootFolder";
 
     public ClipsController(
@@ -33,7 +35,8 @@ public class ClipsController : ControllerBase
         ISyncService syncService,
         IThumbnailService thumbnailService,
         IConfiguration configuration,
-        ILogger<ClipsController> logger)
+        ILogger<ClipsController> logger,
+        IWebHostEnvironment env)
     {
         _context = context;
         _validationService = validationService;
@@ -44,6 +47,7 @@ public class ClipsController : ControllerBase
         _thumbnailService = thumbnailService;
         _configuration = configuration;
         _logger = logger;
+        _env = env;
     }
 
     [HttpGet]
@@ -261,7 +265,23 @@ public class ClipsController : ControllerBase
             }
             else
             {
-                return NotFound();
+                // Backward compatibility: Try old location (ContentRootPath/thumbnails)
+                var oldThumbnailsDir = Path.Combine(_env.ContentRootPath, "thumbnails");
+                var oldJpgPath = Path.Combine(oldThumbnailsDir, $"{id}.jpg");
+                var oldPngPath = Path.Combine(oldThumbnailsDir, $"{id}.png");
+                
+                if (System.IO.File.Exists(oldJpgPath))
+                {
+                    thumbnailPath = oldJpgPath;
+                }
+                else if (System.IO.File.Exists(oldPngPath))
+                {
+                    thumbnailPath = oldPngPath;
+                }
+                else
+                {
+                    return NotFound();
+                }
             }
         }
 
@@ -579,6 +599,139 @@ public class ClipsController : ControllerBase
         {
             _logger.LogError(ex, "Error during thumbnail regeneration");
             return StatusCode(500, "An error occurred while regenerating thumbnails");
+        }
+    }
+
+    [HttpPost("migrate-thumbnails")]
+    public async Task<ActionResult<object>> MigrateThumbnails()
+    {
+        try
+        {
+            var rootFolder = await GetRootFolderPathAsync();
+            if (string.IsNullOrWhiteSpace(rootFolder))
+            {
+                return BadRequest("Root Folder Path is not configured. Please configure it in Settings before migrating thumbnails.");
+            }
+
+            var oldThumbnailsDir = Path.Combine(_env.ContentRootPath, "thumbnails");
+            var newThumbnailsDir = Path.Combine(rootFolder, "thumbnails");
+
+            // Ensure new thumbnails directory exists
+            if (!Directory.Exists(newThumbnailsDir))
+            {
+                Directory.CreateDirectory(newThumbnailsDir);
+            }
+
+            // Get all clips with local thumbnails (not YouTube URLs)
+            var clips = await _context.Clips
+                .Where(c => !string.IsNullOrEmpty(c.ThumbnailPath) && !c.ThumbnailPath.StartsWith("http"))
+                .ToListAsync();
+
+            var processed = 0;
+            var migrated = 0;
+            var alreadyMigrated = 0;
+            var failed = 0;
+            var skipped = 0;
+
+            foreach (var clip in clips)
+            {
+                processed++;
+
+                try
+                {
+                    var currentPath = clip.ThumbnailPath;
+                    
+                    // Check if already in new location
+                    if (currentPath.StartsWith(newThumbnailsDir, StringComparison.OrdinalIgnoreCase))
+                    {
+                        alreadyMigrated++;
+                        continue;
+                    }
+
+                    // Determine old thumbnail path
+                    string? oldThumbnailPath = null;
+                    
+                    // If the path is absolute and points to old location, use it
+                    if (Path.IsPathRooted(currentPath) && currentPath.StartsWith(oldThumbnailsDir, StringComparison.OrdinalIgnoreCase))
+                    {
+                        oldThumbnailPath = currentPath;
+                    }
+                    else
+                    {
+                        // Try to find thumbnail by clip ID in old location
+                        var oldJpgPath = Path.Combine(oldThumbnailsDir, $"{clip.Id}.jpg");
+                        var oldPngPath = Path.Combine(oldThumbnailsDir, $"{clip.Id}.png");
+                        
+                        if (System.IO.File.Exists(oldJpgPath))
+                        {
+                            oldThumbnailPath = oldJpgPath;
+                        }
+                        else if (System.IO.File.Exists(oldPngPath))
+                        {
+                            oldThumbnailPath = oldPngPath;
+                        }
+                    }
+
+                    if (oldThumbnailPath == null || !System.IO.File.Exists(oldThumbnailPath))
+                    {
+                        _logger.LogWarning("Thumbnail not found for clip {ClipId} at old location: {OldPath}", clip.Id, oldThumbnailPath ?? "unknown");
+                        skipped++;
+                        continue;
+                    }
+
+                    // Get new thumbnail path
+                    var newThumbnailPath = await _thumbnailService.GetThumbnailPathAsync(clip.Id);
+                    
+                    // If new location already has the file, skip migration but update database
+                    if (System.IO.File.Exists(newThumbnailPath))
+                    {
+                        _logger.LogInformation("Thumbnail already exists at new location for clip {ClipId}, updating database path", clip.Id);
+                        clip.ThumbnailPath = newThumbnailPath;
+                        await _context.SaveChangesAsync();
+                        alreadyMigrated++;
+                        continue;
+                    }
+
+                    // Move file to new location
+                    try
+                    {
+                        System.IO.File.Move(oldThumbnailPath, newThumbnailPath, overwrite: false);
+                        clip.ThumbnailPath = newThumbnailPath;
+                        await _context.SaveChangesAsync();
+                        migrated++;
+                        _logger.LogInformation("Migrated thumbnail for clip {ClipId} from {OldPath} to {NewPath}", 
+                            clip.Id, LogSanitizationHelper.SanitizePathForLogging(oldThumbnailPath), 
+                            LogSanitizationHelper.SanitizePathForLogging(newThumbnailPath));
+                    }
+                    catch (Exception moveEx)
+                    {
+                        _logger.LogError(moveEx, "Failed to move thumbnail for clip {ClipId} from {OldPath} to {NewPath}", 
+                            clip.Id, LogSanitizationHelper.SanitizePathForLogging(oldThumbnailPath), 
+                            LogSanitizationHelper.SanitizePathForLogging(newThumbnailPath));
+                        failed++;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error migrating thumbnail for clip {ClipId}", clip.Id);
+                    failed++;
+                }
+            }
+
+            return Ok(new
+            {
+                totalProcessed = processed,
+                migrated,
+                alreadyMigrated,
+                failed,
+                skipped,
+                message = $"Thumbnail migration completed. Processed: {processed}, Migrated: {migrated}, Already migrated: {alreadyMigrated}, Failed: {failed}, Skipped: {skipped}"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during thumbnail migration");
+            return StatusCode(500, "An error occurred while migrating thumbnails");
         }
     }
 

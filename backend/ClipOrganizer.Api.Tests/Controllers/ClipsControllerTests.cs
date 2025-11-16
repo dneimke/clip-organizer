@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -24,6 +25,7 @@ public class ClipsControllerTests : IDisposable
     private readonly Mock<IThumbnailService> _mockThumbnailService;
     private readonly Mock<IConfiguration> _mockConfiguration;
     private readonly Mock<ILogger<ClipsController>> _mockLogger;
+    private readonly Mock<IWebHostEnvironment> _mockWebHostEnvironment;
     private readonly ClipsController _controller;
     private readonly List<string> _tempFiles = new();
 
@@ -38,6 +40,8 @@ public class ClipsControllerTests : IDisposable
         _mockThumbnailService = new Mock<IThumbnailService>();
         _mockConfiguration = new Mock<IConfiguration>();
         _mockLogger = new Mock<ILogger<ClipsController>>();
+        _mockWebHostEnvironment = new Mock<IWebHostEnvironment>();
+        _mockWebHostEnvironment.Setup(x => x.ContentRootPath).Returns(Path.GetTempPath());
 
         _controller = new ClipsController(
             _context,
@@ -48,7 +52,8 @@ public class ClipsControllerTests : IDisposable
             _mockSyncService.Object,
             _mockThumbnailService.Object,
             _mockConfiguration.Object,
-            _mockLogger.Object
+            _mockLogger.Object,
+            _mockWebHostEnvironment.Object
         );
     }
 
