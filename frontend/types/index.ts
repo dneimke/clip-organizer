@@ -165,3 +165,17 @@ export interface CreateSessionPlanRequest {
   clipIds: number[];
 }
 
+export interface QueryParseResult {
+  searchTerm?: string | null;
+  tagIds: number[];
+  subfolders: string[];
+  sortBy?: string | null;
+  sortOrder?: string | null;
+  unclassifiedOnly: boolean;
+  interpretedQuery?: string | null;
+}
+
+export interface ParseQueryDto {
+  query: string;
+}
+

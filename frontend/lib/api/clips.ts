@@ -1,4 +1,4 @@
-import { Clip, CreateClipDto, GenerateMetadataDto, GenerateMetadataResponseDto, BulkUploadRequest, BulkUploadResponse, SyncRequest, SyncResponse, SyncPreviewResponse, SelectiveSyncRequest } from '@/types';
+import { Clip, CreateClipDto, GenerateMetadataDto, GenerateMetadataResponseDto, BulkUploadRequest, BulkUploadResponse, SyncRequest, SyncResponse, SyncPreviewResponse, SelectiveSyncRequest, QueryParseResult, ParseQueryDto } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5059';
 
@@ -159,6 +159,22 @@ export async function getSubfolders(): Promise<string[]> {
   const response = await fetch(`${API_BASE_URL}/api/clips/subfolders`);
   if (!response.ok) {
     throw new Error('Failed to fetch subfolders');
+  }
+  return response.json();
+}
+
+export async function parseQuery(query: string): Promise<QueryParseResult> {
+  const dto: ParseQueryDto = { query };
+  const response = await fetch(`${API_BASE_URL}/api/clips/parse-query`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(dto),
+  });
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(error || 'Failed to parse query');
   }
   return response.json();
 }

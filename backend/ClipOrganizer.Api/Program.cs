@@ -22,9 +22,11 @@ builder.Services.AddDbContext<ClipDbContext>(options =>
 builder.Services.AddScoped<IYouTubeService, YouTubeService>();
 builder.Services.AddScoped<IClipValidationService, ClipValidationService>();
 builder.Services.AddScoped<IAIClipGenerationService, AIClipGenerationService>();
+builder.Services.AddScoped<IAIQueryService, AIQueryService>();
 builder.Services.AddScoped<ISessionPlanService, SessionPlanService>();
 builder.Services.AddScoped<ISyncService, SyncService>();
 builder.Services.AddHttpClient<AIClipGenerationService>();
+builder.Services.AddHttpClient<AIQueryService>();
 builder.Services.AddHttpClient<SessionPlanService>();
 
 // Configure CORS

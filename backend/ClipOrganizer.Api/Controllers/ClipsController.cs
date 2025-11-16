@@ -16,6 +16,7 @@ public class ClipsController : ControllerBase
     private readonly IClipValidationService _validationService;
     private readonly IYouTubeService _youtubeService;
     private readonly IAIClipGenerationService _aiGenerationService;
+    private readonly IAIQueryService _aiQueryService;
     private readonly ISyncService _syncService;
     private readonly IConfiguration _configuration;
     private readonly ILogger<ClipsController> _logger;
@@ -26,6 +27,7 @@ public class ClipsController : ControllerBase
         IClipValidationService validationService,
         IYouTubeService youtubeService,
         IAIClipGenerationService aiGenerationService,
+        IAIQueryService aiQueryService,
         ISyncService syncService,
         IConfiguration configuration,
         ILogger<ClipsController> logger)
@@ -34,6 +36,7 @@ public class ClipsController : ControllerBase
         _validationService = validationService;
         _youtubeService = youtubeService;
         _aiGenerationService = aiGenerationService;
+        _aiQueryService = aiQueryService;
         _syncService = syncService;
         _configuration = configuration;
         _logger = logger;
@@ -50,10 +53,17 @@ public class ClipsController : ControllerBase
     {
         var query = _context.Clips.Include(c => c.Tags).AsQueryable();
 
-        // Apply search filter
+        // Apply search filter (case-insensitive search in both Title and Description)
+        // SQLite LIKE is case-insensitive for ASCII characters by default
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            query = query.Where(c => c.Title.Contains(searchTerm));
+            // Escape special LIKE characters and create pattern
+            var escapedSearchTerm = searchTerm.Replace("%", "\\%").Replace("_", "\\_");
+            var searchPattern = $"%{escapedSearchTerm}%";
+            query = query.Where(c => 
+                EF.Functions.Like(c.Title ?? "", searchPattern) ||
+                EF.Functions.Like(c.Description ?? "", searchPattern)
+            );
         }
 
         // Apply tag filters
@@ -230,6 +240,58 @@ public class ClipsController : ControllerBase
         {
             _logger.LogError(ex, "Error generating metadata");
             return StatusCode(500, "An error occurred while generating metadata");
+        }
+    }
+
+    [HttpPost("parse-query")]
+    public async Task<ActionResult<QueryParseResult>> ParseQuery([FromBody] ParseQueryDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Query))
+        {
+            return BadRequest("Query is required");
+        }
+
+        try
+        {
+            // Get all available tags
+            var tags = await _context.Tags
+                .OrderBy(t => t.Category)
+                .ThenBy(t => t.Value)
+                .ToListAsync();
+
+            var availableTags = tags.Select(t => new AvailableTag
+            {
+                Id = t.Id,
+                Category = t.Category.ToString(),
+                Value = t.Value
+            }).ToList();
+
+            // Get available subfolders
+            var clips = await _context.Clips.ToListAsync();
+            var rootFolder = await GetRootFolderPathAsync();
+            
+            var subfolders = clips
+                .Select(c => GetSubfolderForClip(c, rootFolder))
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(s => s)
+                .ToList();
+
+            var context = new QueryContext
+            {
+                AvailableTags = availableTags,
+                AvailableSubfolders = subfolders
+            };
+
+            // Parse query using AI service
+            var result = await _aiQueryService.ParseQueryAsync(dto.Query, context);
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error parsing query");
+            return StatusCode(500, "An error occurred while parsing query");
         }
     }
 
