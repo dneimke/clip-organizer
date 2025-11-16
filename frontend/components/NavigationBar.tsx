@@ -2,19 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { syncClips } from '@/lib/api/clips';
-import { getRootFolder } from '@/lib/api/settings';
 import Link from 'next/link';
-import Toast from './Toast';
-import SessionPlanModal from './SessionPlanModal';
 
 export default function NavigationBar() {
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isQuickSyncing, setIsQuickSyncing] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
-  const [isSessionPlanModalOpen, setIsSessionPlanModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu when clicking outside
@@ -33,47 +26,6 @@ export default function NavigationBar() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [menuOpen]);
-
-  const handleQuickSync = async () => {
-    setIsQuickSyncing(true);
-    setToast(null);
-    setMenuOpen(false);
-
-    try {
-      // Check if root folder is configured
-      const rootFolderSetting = await getRootFolder();
-      if (!rootFolderSetting.rootFolderPath) {
-        setToast({
-          message: 'Root folder not configured. Please configure it in Settings first.',
-          type: 'error',
-        });
-        setIsQuickSyncing(false);
-        return;
-      }
-
-      // Perform sync with configured root folder
-      const result = await syncClips();
-      
-      // Show success message with summary
-      const summary = `Sync complete: ${result.totalScanned} scanned, ${result.totalAdded} added, ${result.totalRemoved} removed`;
-      setToast({
-        message: summary,
-        type: 'success',
-      });
-
-      // Refresh the page if we're on the home page
-      if (pathname === '/') {
-        router.refresh();
-      }
-    } catch (err: unknown) {
-      setToast({
-        message: err instanceof Error ? err.message : 'Failed to sync clips',
-        type: 'error',
-      });
-    } finally {
-      setIsQuickSyncing(false);
-    }
-  };
 
   const isActive = (path: string) => {
     if (path === '/') {
@@ -139,34 +91,6 @@ export default function NavigationBar() {
             
             {/* Primary Actions - Always Visible */}
             <div className="flex items-center gap-2 flex-1 justify-end">
-              {/* Quick Sync - Primary Action */}
-              <button
-                onClick={handleQuickSync}
-                disabled={isQuickSyncing}
-                className="px-4 py-2 bg-[#007BFF] text-white rounded-lg hover:bg-[#0056b3] disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
-                title="Quick sync with configured root folder"
-                aria-label="Quick sync with configured root folder"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                <span className="hidden sm:inline">{isQuickSyncing ? 'Syncing...' : 'Quick Sync'}</span>
-              </button>
-              
-              {/* Plan a Session - Primary Action */}
-              <button
-                onClick={() => setIsSessionPlanModalOpen(true)}
-                className="px-4 py-2 bg-[#007BFF] text-white rounded-lg hover:bg-[#0056b3] transition-colors font-medium flex items-center gap-2"
-                aria-label="Create collection"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                <span className="hidden sm:inline">New Collection</span>
-              </button>
-              
-              
-              
               {/* Hamburger Menu - Secondary Actions */}
               <div className="relative" ref={menuRef}>
                 <button
@@ -261,26 +185,6 @@ export default function NavigationBar() {
         </div>
       </nav>
       
-      {/* Toast Notification */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
-
-      {/* Session Plan Modal */}
-      <SessionPlanModal
-        isOpen={isSessionPlanModalOpen}
-        onClose={() => setIsSessionPlanModalOpen(false)}
-        onPlanSaved={() => {
-          setIsSessionPlanModalOpen(false);
-          if (pathname === '/plans') {
-            router.refresh();
-          }
-        }}
-      />
     </>
   );
 }

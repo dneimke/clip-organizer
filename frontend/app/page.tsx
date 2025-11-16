@@ -49,11 +49,9 @@ export default function Home() {
     setHasSearched(true);
 
     try {
-      // Parse the query using AI
       const parseResult = await parseQuery(userQuery);
       setParsedFilters(parseResult);
 
-      // Load clips with parsed filters
       setLoading(true);
       const fetchedClips = await getClips(
         parseResult.searchTerm || undefined,
@@ -99,12 +97,6 @@ export default function Home() {
     <div className="min-h-screen bg-[#121212]">
       {/* Main Content */}
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2">AI Search</h1>
-          <p className="text-gray-400">Ask questions about your clips in natural language</p>
-        </div>
-
         {/* AI Query Input */}
         <div className="mb-6">
           <AIQueryInput
@@ -259,7 +251,7 @@ export default function Home() {
           <ClipList clips={clips} viewMode={viewMode} />
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-400">Enter a question above to search your clips using AI.</p>
+            <p className="text-gray-400">Browse your clips using the menu.</p>
           </div>
         )}
       </div>

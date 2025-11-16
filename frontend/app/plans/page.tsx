@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { SessionPlan } from '@/types';
 import { getSessionPlans, deleteSessionPlan } from '@/lib/api/session-plans';
 import Toast from '@/components/Toast';
+import SessionPlanModal from '@/components/SessionPlanModal';
 
 export default function PlansPage() {
   const [plans, setPlans] = useState<SessionPlan[]>([]);
@@ -12,6 +13,7 @@ export default function PlansPage() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [isSessionPlanModalOpen, setIsSessionPlanModalOpen] = useState(false);
 
   useEffect(() => {
     loadPlans();
@@ -77,6 +79,16 @@ export default function PlansPage() {
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-3xl font-bold text-white">Collections</h1>
+          <button
+            onClick={() => setIsSessionPlanModalOpen(true)}
+            className="px-4 py-2 bg-[#007BFF] text-white rounded-lg hover:bg-[#0056b3] transition-colors font-medium flex items-center gap-2"
+            aria-label="Create collection"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <span className="hidden sm:inline">New Collection</span>
+          </button>
         </div>
 
         {error && (
@@ -89,9 +101,12 @@ export default function PlansPage() {
         {plans.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-400 text-lg mb-4">No collections yet</p>
-            <p className="text-gray-500 text-sm">
-              Create your first collection using the &quot;New Collection&quot; button in the header
-            </p>
+            <button
+              onClick={() => setIsSessionPlanModalOpen(true)}
+              className="mt-2 px-4 py-2 bg-[#007BFF] text-white rounded-lg hover:bg-[#0056b3] transition-colors font-medium"
+            >
+              New Collection
+            </button>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -153,6 +168,16 @@ export default function PlansPage() {
           onClose={() => setToast(null)}
         />
       )}
+      
+      {/* Session Plan Modal */}
+      <SessionPlanModal
+        isOpen={isSessionPlanModalOpen}
+        onClose={() => setIsSessionPlanModalOpen(false)}
+        onPlanSaved={async () => {
+          setIsSessionPlanModalOpen(false);
+          await loadPlans();
+        }}
+      />
     </div>
   );
 }
