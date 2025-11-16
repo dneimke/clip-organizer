@@ -102,7 +102,8 @@ public class SyncServiceTests : IDisposable
         // Arrange
         var context = TestHelpers.CreateInMemoryDbContext();
         var service = CreateService(context);
-        var nonExistentPath = @"C:\NonExistent\Directory";
+        // Use platform-agnostic absolute path that doesn't exist
+        var nonExistentPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "NonExistent");
 
         // Act
         var result = await service.SyncAsync(nonExistentPath);
@@ -409,11 +410,12 @@ public class SyncServiceTests : IDisposable
     public async Task SelectiveSyncAsync_RemovesSelectedClips()
     {
         // Arrange
+        var tempDir = CreateTempDirectory();
         var context = TestHelpers.CreateInMemoryDbContext();
         var clipToRemove = new ClipBuilder()
             .WithTitle("To Remove")
             .WithStorageType(StorageType.Local)
-            .WithLocationString(@"C:\test.mp4")
+            .WithLocationString(Path.Combine(tempDir, "test.mp4"))
             .Build();
         context.Clips.Add(clipToRemove);
         await context.SaveChangesAsync();
@@ -422,7 +424,7 @@ public class SyncServiceTests : IDisposable
 
         var request = new SelectiveSyncRequestDto
         {
-            RootFolderPath = @"C:\",
+            RootFolderPath = tempDir,
             FilesToAdd = new List<string>(),
             ClipIdsToRemove = new List<int> { clipToRemove.Id }
         };
@@ -499,12 +501,13 @@ public class SyncServiceTests : IDisposable
     public async Task SelectiveSyncAsync_NonExistentClipId_AddsError()
     {
         // Arrange
+        var tempDir = CreateTempDirectory();
         var context = TestHelpers.CreateInMemoryDbContext();
         var service = CreateService(context);
 
         var request = new SelectiveSyncRequestDto
         {
-            RootFolderPath = @"C:\",
+            RootFolderPath = tempDir,
             FilesToAdd = new List<string>(),
             ClipIdsToRemove = new List<int> { 999 }
         };
