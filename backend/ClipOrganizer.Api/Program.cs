@@ -25,6 +25,7 @@ builder.Services.AddScoped<IAIClipGenerationService, AIClipGenerationService>();
 builder.Services.AddScoped<IAIQueryService, AIQueryService>();
 builder.Services.AddScoped<ISessionPlanService, SessionPlanService>();
 builder.Services.AddScoped<ISyncService, SyncService>();
+builder.Services.AddScoped<IThumbnailService, ThumbnailService>();
 builder.Services.AddHttpClient<AIClipGenerationService>();
 builder.Services.AddHttpClient<AIQueryService>();
 builder.Services.AddHttpClient<SessionPlanService>();
@@ -81,6 +82,13 @@ using (var scope = app.Services.CreateScope())
         {
             // Add Description column
             command.CommandText = "ALTER TABLE Clips ADD COLUMN Description TEXT DEFAULT ''";
+            command.ExecuteNonQuery();
+        }
+        
+        if (!columns.Contains("ThumbnailPath"))
+        {
+            // Add ThumbnailPath column
+            command.CommandText = "ALTER TABLE Clips ADD COLUMN ThumbnailPath TEXT";
             command.ExecuteNonQuery();
         }
         

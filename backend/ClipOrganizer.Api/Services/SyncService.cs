@@ -9,12 +9,14 @@ namespace ClipOrganizer.Api.Services;
 public class SyncService : ISyncService
 {
     private readonly ClipDbContext _context;
+    private readonly IThumbnailService _thumbnailService;
     private readonly ILogger<SyncService> _logger;
     private readonly string[] _validVideoExtensions = { ".mp4", ".webm", ".mov", ".avi", ".ogg" };
 
-    public SyncService(ClipDbContext context, ILogger<SyncService> logger)
+    public SyncService(ClipDbContext context, IThumbnailService thumbnailService, ILogger<SyncService> logger)
     {
         _context = context;
+        _thumbnailService = thumbnailService;
         _logger = logger;
     }
 
@@ -109,6 +111,22 @@ public class SyncService : ISyncService
 
                     _context.Clips.Add(clip);
                     await _context.SaveChangesAsync();
+
+                    // Generate thumbnail after clip is saved (so we have clip.Id)
+                    try
+                    {
+                        var thumbnailPath = await _thumbnailService.GenerateThumbnailAsync(filePath, clip.Id);
+                        if (thumbnailPath != null)
+                        {
+                            clip.ThumbnailPath = thumbnailPath;
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+                    catch (Exception thumbEx)
+                    {
+                        // Don't fail the entire sync if thumbnail generation fails
+                        _logger.LogWarning(thumbEx, "Failed to generate thumbnail for clip {ClipId}", clip.Id);
+                    }
 
                     response.AddedClips.Add(new SyncAddedClipDto
                     {

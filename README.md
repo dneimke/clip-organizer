@@ -2,7 +2,13 @@
 
 A modern video clip management system designed for organizing, tagging, and retrieving field hockey video content. Manage clips from local Windows file paths and YouTube URLs with powerful search and filtering capabilities.
 
-![Home Screen](assets/screenshot-home.png)
+**AI Search Interface** - Ask questions about your clips in natural language
+
+![AI Search Interface](assets/screenshot-home.png)
+
+**Clip Grid View** - Browse clips with visual thumbnails and rich metadata
+
+![Clip Grid View](assets/screenshot-home-tile.png)
 
 ## Overview
 
@@ -17,6 +23,7 @@ Key features include:
 - 🔍 Advanced search and multi-tag filtering
 - 📺 In-app YouTube playback
 - 🎯 Quick access to local video files
+- 🖼️ **Automatic Thumbnail Generation**: Visual thumbnails for all video clips
 - 💾 SQLite database for lightweight, portable storage
 
 ## Tech Stack
@@ -33,6 +40,7 @@ Before you begin, ensure you have the following installed:
 
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or later
 - [Node.js](https://nodejs.org/) 18.x or later (includes npm)
+- [FFmpeg](https://ffmpeg.org/download.html) (for thumbnail generation from local video files)
 - [YouTube Data API v3 Key](https://console.cloud.google.com/apis/credentials) (for YouTube clip functionality)
 - [Gemini API Key](https://aistudio.google.com/app/apikey) (for AI-powered metadata generation)
 
@@ -161,6 +169,50 @@ The SQLite database is automatically created on first run. The database file (`c
 }
 ```
 
+#### 2.2. Install FFmpeg
+
+FFmpeg is required for generating thumbnails from local video files. YouTube clips use YouTube's thumbnail API and don't require FFmpeg.
+
+**Windows Installation**:
+
+1. Download FFmpeg from [https://ffmpeg.org/download.html](https://ffmpeg.org/download.html)
+   - For Windows, download the "Windows builds from gyan.dev" or "Windows builds from BtbN"
+   - Choose the "release" or "release-essentials" build
+
+2. Extract the downloaded ZIP file to a location like `C:\ffmpeg`
+
+3. **Option A: Add FFmpeg to your system PATH** (Recommended):
+   - Open System Properties → Environment Variables
+   - Edit the "Path" variable in System variables
+   - Add the path to the `bin` folder (e.g., `C:\ffmpeg\bin`)
+   - Click OK to save
+   - Restart your terminal/IDE
+
+4. **Option B: Configure FFmpeg path in appsettings.json** (Alternative):
+   - If you don't want to add FFmpeg to your system PATH, you can configure it directly in `appsettings.json`:
+   ```json
+   {
+     "FFmpeg": {
+       "BinaryFolder": "C:\\ffmpeg\\bin"
+     }
+   }
+   ```
+   - Replace `C:\\ffmpeg\\bin` with the actual path to your FFmpeg `bin` directory
+   - Use double backslashes (`\\`) in the JSON path
+   - The application will use this path instead of searching in PATH
+
+5. Verify installation:
+   ```bash
+   ffmpeg -version
+   ```
+   You should see FFmpeg version information if installed correctly.
+
+> **Note**: 
+> - FFmpeg must be accessible either from PATH or configured in `appsettings.json` for thumbnail generation to work
+> - If FFmpeg is not installed or not accessible, thumbnail generation will fail gracefully (clips will still be created without thumbnails)
+> - You may need to restart your terminal/IDE after adding FFmpeg to PATH
+> - If using a custom path in `appsettings.json`, ensure the path points to the `bin` directory containing `ffmpeg.exe` and `ffprobe.exe`
+
 #### 2.3. Install Backend Dependencies
 
 1. Navigate to the backend directory:
@@ -240,8 +292,10 @@ To verify everything is configured correctly:
 
 1. **Backend**: Check that the API starts without errors and Swagger UI loads
 2. **Frontend**: Check that the application loads and can connect to the backend
-3. **YouTube API**: Try adding a YouTube clip to verify the YouTube API key works
-4. **Gemini API**: Try using the "Generate with AI" feature to verify the Gemini API key works
+3. **FFmpeg**: Verify FFmpeg is accessible by running `ffmpeg -version` in your terminal
+4. **YouTube API**: Try adding a YouTube clip to verify the YouTube API key works (thumbnails should appear automatically)
+5. **Gemini API**: Try using the "Generate with AI" feature to verify the Gemini API key works
+6. **Thumbnail Generation**: Add a local video clip and verify a thumbnail is generated (check the `thumbnails/` directory in the backend folder)
 
 If you see errors, refer to the [Troubleshooting](#troubleshooting) section below.
 
@@ -256,7 +310,12 @@ clip-organizer/
 │       ├── DTOs/               # Data transfer objects
 │       ├── Models/             # Domain models
 │       ├── Services/           # Business logic services
+│       ├── thumbnails/         # Generated thumbnail images (created automatically)
 │       └── Program.cs          # Application entry point
+│
+├── docs/                       # Documentation
+│   ├── thumbnails.md          # Thumbnail feature documentation
+│   └── youtube-integration.md  # YouTube integration documentation
 │
 └── frontend/
     ├── app/                    # Next.js app router pages
@@ -264,6 +323,8 @@ clip-organizer/
     ├── lib/api/                # API client functions
     └── types/                  # TypeScript type definitions
 ```
+
+> **Note**: The `thumbnails/` directory is created automatically when the application runs. Thumbnails are stored as JPEG files named `{clipId}.jpg` on the filesystem. See [Thumbnail Feature Documentation](docs/thumbnails.md) for detailed information.
 
 ## Usage
 
@@ -309,6 +370,40 @@ clip-organizer/
 
 The video player supports standard controls including play, pause, seek, volume adjustment, and fullscreen mode. For local clips, the file path is also displayed below the player for reference.
 
+### Regenerating Thumbnails
+
+If you have existing clips without thumbnails (e.g., clips created before the thumbnail feature was added), you can regenerate thumbnails for them using the API endpoint.
+
+**Generate thumbnails for clips missing them** (default behavior):
+```bash
+# Using PowerShell
+Invoke-RestMethod -Uri "http://localhost:5059/api/clips/regenerate-thumbnails" -Method POST
+
+# Using curl
+curl -X POST http://localhost:5059/api/clips/regenerate-thumbnails
+```
+
+**Regenerate all thumbnails** (including existing ones):
+```bash
+# Using PowerShell
+Invoke-RestMethod -Uri "http://localhost:5059/api/clips/regenerate-thumbnails?regenerateAll=true" -Method POST
+
+# Using curl
+curl -X POST "http://localhost:5059/api/clips/regenerate-thumbnails?regenerateAll=true"
+```
+
+The endpoint returns a summary with:
+- `totalProcessed`: Total clips processed
+- `succeeded`: Successfully generated thumbnails
+- `failed`: Failed to generate (e.g., missing files, FFmpeg errors)
+- `skipped`: Skipped (e.g., file not found, invalid storage type)
+
+> **Note**: 
+> - For local clips, FFmpeg must be installed and accessible in your PATH
+> - YouTube clips automatically get thumbnail URLs (no FFmpeg needed)
+> - The process may take a while if you have many clips
+> - See [Thumbnail Feature Documentation](docs/thumbnails.md) for detailed information about how thumbnails work
+
 ## Development
 
 ### Backend Development
@@ -343,6 +438,8 @@ The API exposes the following main endpoints:
 - `POST /api/clips` - Create a new clip
 - `PUT /api/clips/{id}` - Update a clip
 - `POST /api/clips/generate-metadata` - Generate AI metadata (title, description, tags) from notes
+- `POST /api/clips/regenerate-thumbnails` - Regenerate thumbnails for existing clips
+- `GET /api/clips/{id}/thumbnail` - Get thumbnail image for a clip
 - `GET /api/tags` - Get all tags grouped by category
 - `POST /api/tags` - Create a new tag
 
@@ -426,6 +523,20 @@ To change ports:
   dotnet clean
   dotnet restore
   ```
+
+- **Thumbnail generation fails**:
+  - Verify FFmpeg is installed: Run `ffmpeg -version` in your terminal
+  - Ensure FFmpeg is in your system PATH (see [Install FFmpeg](#22-install-ffmpeg) section)
+  - Check backend logs for specific FFmpeg errors
+  - Thumbnail generation failures are logged as warnings and don't prevent clip creation
+  - If thumbnails aren't generating, clips will still be created successfully (just without thumbnails)
+  - To regenerate thumbnails for existing clips, see [Regenerating Thumbnails](#regenerating-thumbnails) section below
+
+- **FFmpeg not found errors**:
+  - Ensure FFmpeg is installed and accessible from command line
+  - Restart your terminal/IDE after adding FFmpeg to PATH
+  - On Windows, verify the PATH environment variable includes the FFmpeg bin directory
+  - Try running `ffmpeg -version` in a new terminal window to verify PATH is set correctly
 
 ### Frontend Issues
 

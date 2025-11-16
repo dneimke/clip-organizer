@@ -23,6 +23,7 @@ export interface Clip {
   storageType: string;
   locationString: string;
   duration: number;
+  thumbnailPath?: string;
   tags: Tag[];
   isUnclassified: boolean;
 }

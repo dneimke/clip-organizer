@@ -118,5 +118,20 @@ public class YouTubeService : IYouTubeService
 
         return hours * 3600 + minutes * 60 + seconds;
     }
+
+    public string GetThumbnailUrl(string videoId)
+    {
+        if (string.IsNullOrEmpty(videoId))
+        {
+            return string.Empty;
+        }
+
+        // Use maxresdefault for highest quality, fallback options:
+        // maxresdefault.jpg - 1280x720 (may not exist for all videos)
+        // hqdefault.jpg - 480x360 (high quality, usually available)
+        // mqdefault.jpg - 320x180 (medium quality)
+        // sddefault.jpg - 640x480 (standard definition)
+        return $"https://img.youtube.com/vi/{videoId}/hqdefault.jpg";
+    }
 }
 

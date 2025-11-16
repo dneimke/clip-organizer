@@ -20,20 +20,55 @@ export default function ClipCard({ clip }: ClipCardProps) {
   return (
     <Link href={`/clips/${clip.id}`}>
       <div className={`bg-[#202020] rounded-lg overflow-hidden hover:bg-[#252525] transition-all cursor-pointer flex flex-col h-full ${isUnclassified ? 'border-2 border-yellow-500/50' : ''}`}>
-        {/* Video Placeholder */}
-        <div className="relative bg-[#303030] w-full aspect-video flex items-center justify-center">
+        {/* Thumbnail */}
+        <div className="relative bg-[#303030] w-full aspect-video flex items-center justify-center overflow-hidden">
           {isUnclassified && (
-            <div className="absolute top-2 right-2 bg-yellow-500 text-yellow-900 text-xs font-bold px-2 py-1 rounded">
+            <div className="absolute top-2 right-2 z-10 bg-yellow-500 text-yellow-900 text-xs font-bold px-2 py-1 rounded">
               Unclassified
             </div>
           )}
-          <svg
-            className="w-16 h-16 text-white/70"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path d="M8 5v14l11-7z" />
-          </svg>
+          {clip.thumbnailPath ? (
+            clip.storageType === 'YouTube' ? (
+              <img
+                src={clip.thumbnailPath}
+                alt={clip.title}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Fallback to placeholder if image fails to load
+                  const target = e.currentTarget;
+                  target.style.display = 'none';
+                  const placeholder = target.parentElement?.querySelector('.placeholder-icon') as HTMLElement;
+                  if (placeholder) {
+                    placeholder.classList.remove('hidden');
+                  }
+                }}
+              />
+            ) : (
+              <img
+                src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5059'}/api/clips/${clip.id}/thumbnail`}
+                alt={clip.title}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Fallback to placeholder if image fails to load
+                  const target = e.currentTarget;
+                  target.style.display = 'none';
+                  const placeholder = target.parentElement?.querySelector('.placeholder-icon') as HTMLElement;
+                  if (placeholder) {
+                    placeholder.classList.remove('hidden');
+                  }
+                }}
+              />
+            )
+          ) : null}
+          <div className={`absolute inset-0 flex items-center justify-center ${clip.thumbnailPath ? 'hidden' : ''} placeholder-icon`}>
+            <svg
+              className="w-16 h-16 text-white/70"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
         </div>
 
         {/* Content */}

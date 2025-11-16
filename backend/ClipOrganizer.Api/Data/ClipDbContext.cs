@@ -27,6 +27,7 @@ public class ClipDbContext : DbContext
             entity.Property(e => e.Description).HasMaxLength(2000).HasDefaultValue(string.Empty);
             entity.Property(e => e.LocationString).IsRequired().HasMaxLength(1000);
             entity.Property(e => e.Duration).IsRequired();
+            entity.Property(e => e.ThumbnailPath).HasMaxLength(1000);
             
             // Create unique index on LocationString to prevent duplicates
             entity.HasIndex(e => e.LocationString).IsUnique();

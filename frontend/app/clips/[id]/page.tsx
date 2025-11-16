@@ -240,6 +240,25 @@ export default function ClipDetailPage() {
             </div>
           </div>
 
+          {/* Thumbnail */}
+          {clip.thumbnailPath && (
+            <div className="mb-6">
+              {clip.storageType === 'YouTube' ? (
+                <img
+                  src={clip.thumbnailPath}
+                  alt={clip.title}
+                  className="w-full max-w-2xl mx-auto rounded-lg shadow-lg"
+                />
+              ) : (
+                <img
+                  src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5059'}/api/clips/${clip.id}/thumbnail`}
+                  alt={clip.title}
+                  className="w-full max-w-2xl mx-auto rounded-lg shadow-lg"
+                />
+              )}
+            </div>
+          )}
+
           <div className="mb-6">
             {clip.storageType === 'YouTube' ? (
               <YouTubePlayer videoId={clip.locationString} />

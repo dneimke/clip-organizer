@@ -18,6 +18,7 @@ public class ClipsController : ControllerBase
     private readonly IAIClipGenerationService _aiGenerationService;
     private readonly IAIQueryService _aiQueryService;
     private readonly ISyncService _syncService;
+    private readonly IThumbnailService _thumbnailService;
     private readonly IConfiguration _configuration;
     private readonly ILogger<ClipsController> _logger;
     private const string RootFolderKey = "VideoLibrary.RootFolder";
@@ -29,6 +30,7 @@ public class ClipsController : ControllerBase
         IAIClipGenerationService aiGenerationService,
         IAIQueryService aiQueryService,
         ISyncService syncService,
+        IThumbnailService thumbnailService,
         IConfiguration configuration,
         ILogger<ClipsController> logger)
     {
@@ -38,6 +40,7 @@ public class ClipsController : ControllerBase
         _aiGenerationService = aiGenerationService;
         _aiQueryService = aiQueryService;
         _syncService = syncService;
+        _thumbnailService = thumbnailService;
         _configuration = configuration;
         _logger = logger;
     }
@@ -200,6 +203,47 @@ public class ClipsController : ControllerBase
         {
             EnableRangeProcessing = true
         };
+    }
+
+    [HttpGet("{id}/thumbnail")]
+    public async Task<IActionResult> GetThumbnail(int id)
+    {
+        var clip = await _context.Clips.FindAsync(id);
+        
+        if (clip == null || string.IsNullOrEmpty(clip.ThumbnailPath))
+        {
+            return NotFound();
+        }
+
+        // Handle YouTube thumbnails (URLs)
+        if (clip.ThumbnailPath.StartsWith("http"))
+        {
+            // Redirect to YouTube thumbnail URL
+            return Redirect(clip.ThumbnailPath);
+        }
+
+        // Handle local file thumbnails
+        // Check for both .jpg and .png extensions (for backward compatibility)
+        var thumbnailPath = clip.ThumbnailPath;
+        if (!System.IO.File.Exists(thumbnailPath))
+        {
+            // Try .png extension if .jpg doesn't exist
+            var pngPath = Path.ChangeExtension(thumbnailPath, ".png");
+            if (System.IO.File.Exists(pngPath))
+            {
+                thumbnailPath = pngPath;
+            }
+            else
+            {
+                return NotFound();
+            }
+        }
+
+        var imageBytes = await System.IO.File.ReadAllBytesAsync(thumbnailPath);
+        var contentType = thumbnailPath.EndsWith(".png", StringComparison.OrdinalIgnoreCase) 
+            ? "image/png" 
+            : "image/jpeg";
+        return File(imageBytes, contentType);
     }
 
     [HttpPost("generate-metadata")]
@@ -377,6 +421,22 @@ public class ClipsController : ControllerBase
                 _context.Clips.Add(clip);
                 await _context.SaveChangesAsync();
 
+                // Generate thumbnail after clip is saved
+                try
+                {
+                    var thumbnailPath = await _thumbnailService.GenerateThumbnailAsync(filePath, clip.Id);
+                    if (thumbnailPath != null)
+                    {
+                        clip.ThumbnailPath = thumbnailPath;
+                        await _context.SaveChangesAsync();
+                    }
+                }
+                catch (Exception thumbEx)
+                {
+                    // Don't fail the entire bulk upload if thumbnail generation fails
+                    _logger.LogWarning(thumbEx, "Failed to generate thumbnail for clip {ClipId}", clip.Id);
+                }
+
                 // Add to existing locations to prevent duplicates in same batch
                 existingLocations.Add(normalizedPath);
 
@@ -530,6 +590,101 @@ public class ClipsController : ControllerBase
         }
     }
 
+    [HttpPost("regenerate-thumbnails")]
+    public async Task<ActionResult<object>> RegenerateThumbnails([FromQuery] bool regenerateAll = false)
+    {
+        try
+        {
+            var clips = await _context.Clips.ToListAsync();
+            
+            // Filter clips that need thumbnails
+            var clipsToProcess = regenerateAll 
+                ? clips 
+                : clips.Where(c => string.IsNullOrEmpty(c.ThumbnailPath)).ToList();
+
+            var processed = 0;
+            var succeeded = 0;
+            var failed = 0;
+            var skipped = 0;
+
+            foreach (var clip in clipsToProcess)
+            {
+                processed++;
+
+                try
+                {
+                    if (clip.StorageType == StorageType.YouTube)
+                    {
+                        // For YouTube clips, generate thumbnail URL
+                        var thumbnailUrl = _youtubeService.GetThumbnailUrl(clip.LocationString);
+                        if (!string.IsNullOrEmpty(thumbnailUrl))
+                        {
+                            clip.ThumbnailPath = thumbnailUrl;
+                            await _context.SaveChangesAsync();
+                            succeeded++;
+                        }
+                        else
+                        {
+                            skipped++;
+                        }
+                    }
+                    else if (clip.StorageType == StorageType.Local)
+                    {
+                        // For local clips, generate thumbnail using FFmpeg
+                        if (!string.IsNullOrEmpty(clip.LocationString) && System.IO.File.Exists(clip.LocationString))
+                        {
+                            // Delete old thumbnail if regenerating all
+                            if (regenerateAll && !string.IsNullOrEmpty(clip.ThumbnailPath) && !clip.ThumbnailPath.StartsWith("http"))
+                            {
+                                _thumbnailService.DeleteThumbnail(clip.ThumbnailPath);
+                            }
+
+                            var thumbnailPath = await _thumbnailService.GenerateThumbnailAsync(clip.LocationString, clip.Id);
+                            if (thumbnailPath != null)
+                            {
+                                clip.ThumbnailPath = thumbnailPath;
+                                await _context.SaveChangesAsync();
+                                succeeded++;
+                            }
+                            else
+                            {
+                                failed++;
+                            }
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Skipping clip {ClipId}: file not found at {Location}", clip.Id, clip.LocationString);
+                            skipped++;
+                        }
+                    }
+                    else
+                    {
+                        skipped++;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to generate thumbnail for clip {ClipId}", clip.Id);
+                    failed++;
+                }
+            }
+
+            return Ok(new
+            {
+                totalProcessed = processed,
+                succeeded,
+                failed,
+                skipped,
+                message = $"Thumbnail regeneration completed. Processed: {processed}, Succeeded: {succeeded}, Failed: {failed}, Skipped: {skipped}"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during thumbnail regeneration");
+            return StatusCode(500, "An error occurred while regenerating thumbnails");
+        }
+    }
+
     [HttpPost]
     public async Task<ActionResult<ClipDto>> CreateClip([FromBody] CreateClipDto dto)
     {
@@ -544,6 +699,7 @@ public class ClipsController : ControllerBase
             string title;
             int duration;
             string locationString = dto.LocationString;
+            string? thumbnailPath = null;
 
             if (storageType == StorageType.YouTube)
             {
@@ -557,6 +713,8 @@ public class ClipsController : ControllerBase
                 title = !string.IsNullOrWhiteSpace(dto.Title) ? dto.Title : videoTitle;
                 duration = videoDuration;
                 locationString = videoId; // Store just the video ID
+                // Set YouTube thumbnail URL
+                thumbnailPath = _youtubeService.GetThumbnailUrl(videoId);
             }
             else
             {
@@ -579,7 +737,8 @@ public class ClipsController : ControllerBase
                 Description = dto.Description ?? string.Empty,
                 StorageType = storageType,
                 LocationString = locationString,
-                Duration = duration
+                Duration = duration,
+                ThumbnailPath = thumbnailPath
             };
 
             // Add existing tags if provided
@@ -607,6 +766,24 @@ public class ClipsController : ControllerBase
 
             _context.Clips.Add(clip);
             await _context.SaveChangesAsync();
+
+            // Generate thumbnail for local files
+            if (storageType == StorageType.Local && string.IsNullOrEmpty(clip.ThumbnailPath))
+            {
+                try
+                {
+                    var generatedThumbnailPath = await _thumbnailService.GenerateThumbnailAsync(dto.LocationString, clip.Id);
+                    if (generatedThumbnailPath != null)
+                    {
+                        clip.ThumbnailPath = generatedThumbnailPath;
+                        await _context.SaveChangesAsync();
+                    }
+                }
+                catch (Exception thumbEx)
+                {
+                    _logger.LogWarning(thumbEx, "Failed to generate thumbnail for clip {ClipId}", clip.Id);
+                }
+            }
 
             // Reload with tags
             await _context.Entry(clip).Collection(c => c.Tags).LoadAsync();
@@ -638,6 +815,8 @@ public class ClipsController : ControllerBase
             string title;
             int duration;
             string locationString = dto.LocationString;
+            bool locationChanged = clip.LocationString != locationString || clip.StorageType != storageType;
+            string? oldThumbnailPath = clip.ThumbnailPath;
 
             if (storageType == StorageType.YouTube)
             {
@@ -651,6 +830,8 @@ public class ClipsController : ControllerBase
                 title = !string.IsNullOrWhiteSpace(dto.Title) ? dto.Title : videoTitle;
                 duration = videoDuration;
                 locationString = videoId;
+                // Set YouTube thumbnail URL
+                clip.ThumbnailPath = _youtubeService.GetThumbnailUrl(videoId);
             }
             else
             {
@@ -662,6 +843,7 @@ public class ClipsController : ControllerBase
                 // Use provided title if available, otherwise extract filename as title
                 title = !string.IsNullOrWhiteSpace(dto.Title) ? dto.Title : Path.GetFileNameWithoutExtension(dto.LocationString);
                 duration = 0;
+                // Thumbnail will be generated below if location changed
             }
 
             clip.Title = title;
@@ -695,6 +877,30 @@ public class ClipsController : ControllerBase
             }
 
             await _context.SaveChangesAsync();
+
+            // Regenerate thumbnail if location changed for local files
+            if (locationChanged && storageType == StorageType.Local)
+            {
+                // Delete old thumbnail if it exists and is a local file
+                if (!string.IsNullOrEmpty(oldThumbnailPath) && !oldThumbnailPath.StartsWith("http"))
+                {
+                    _thumbnailService.DeleteThumbnail(oldThumbnailPath);
+                }
+
+                try
+                {
+                    var generatedThumbnailPath = await _thumbnailService.GenerateThumbnailAsync(dto.LocationString, clip.Id);
+                    if (generatedThumbnailPath != null)
+                    {
+                        clip.ThumbnailPath = generatedThumbnailPath;
+                        await _context.SaveChangesAsync();
+                    }
+                }
+                catch (Exception thumbEx)
+                {
+                    _logger.LogWarning(thumbEx, "Failed to generate thumbnail for clip {ClipId}", clip.Id);
+                }
+            }
 
             return Ok(MapToDto(clip));
         }
@@ -855,6 +1061,7 @@ public class ClipsController : ControllerBase
             StorageType = clip.StorageType.ToString(),
             LocationString = clip.LocationString,
             Duration = clip.Duration,
+            ThumbnailPath = clip.ThumbnailPath,
             Tags = clip.Tags.Select(t => new TagDto
             {
                 Id = t.Id,
