@@ -187,4 +187,19 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-app.Run();
+// Configure graceful shutdown
+var cts = new CancellationTokenSource();
+Console.CancelKeyPress += (sender, e) =>
+{
+    e.Cancel = true;
+    cts.Cancel();
+};
+
+try
+{
+    await app.RunAsync(cts.Token);
+}
+catch (OperationCanceledException)
+{
+    // Expected when shutdown is requested
+}

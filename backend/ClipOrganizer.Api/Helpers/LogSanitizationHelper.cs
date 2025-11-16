@@ -19,6 +19,17 @@ public static class LogSanitizationHelper
             return string.Empty;
         }
 
+        // Handle invalid maxLength values
+        if (maxLength < 0)
+        {
+            maxLength = 500; // Use default for negative values
+        }
+
+        if (maxLength == 0)
+        {
+            return string.Empty;
+        }
+
         // Truncate if too long
         var sanitized = input.Length > maxLength 
             ? input.Substring(0, maxLength) + "..." 
@@ -32,11 +43,11 @@ public static class LogSanitizationHelper
             .Replace("\r", " ")
             .Replace("\t", " ");
 
-        // Remove other control characters (0x00-0x1F except space)
+        // Replace other control characters (0x00-0x1F except space) with spaces
         sanitized = System.Text.RegularExpressions.Regex.Replace(
             sanitized, 
             @"[\x00-\x1F]", 
-            string.Empty);
+            " ");
 
         // Collapse multiple spaces into one
         sanitized = System.Text.RegularExpressions.Regex.Replace(
