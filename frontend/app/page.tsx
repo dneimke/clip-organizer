@@ -21,6 +21,7 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<ViewMode>('card');
   const [hasSearched, setHasSearched] = useState(false);
   const [diagnosticsExpanded, setDiagnosticsExpanded] = useState(false);
+  const [queryClearSignal, setQueryClearSignal] = useState(0);
 
   // Load view mode from localStorage after hydration
   useEffect(() => {
@@ -84,6 +85,7 @@ export default function Home() {
     setClips([]);
     setError(null);
     setHasSearched(false);
+    setQueryClearSignal(prev => prev + 1);
   };
 
   const handleViewModeChange = (mode: ViewMode) => {
@@ -102,6 +104,7 @@ export default function Home() {
           <AIQueryInput
             onQuerySubmit={handleQuerySubmit}
             isLoading={parsing}
+            clearSignal={queryClearSignal}
           />
         </div>
 
@@ -220,9 +223,11 @@ export default function Home() {
               </p>
             )}
           </div>
-          <div className="flex items-center gap-4">
-            <ViewToggle viewMode={viewMode} onViewModeChange={handleViewModeChange} />
-          </div>
+          {hasSearched && !loading && !parsing && !error && clips.length > 0 && (
+            <div className="flex items-center gap-4">
+              <ViewToggle viewMode={viewMode} onViewModeChange={handleViewModeChange} />
+            </div>
+          )}
         </div>
 
         {parsing ? (
@@ -249,11 +254,7 @@ export default function Home() {
           </div>
         ) : hasSearched ? (
           <ClipList clips={clips} viewMode={viewMode} />
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-gray-400">Browse your clips using the menu.</p>
-          </div>
-        )}
+        ) : null}
       </div>
 
       {/* Toast Notification */}
