@@ -8,7 +8,8 @@ export async function getClips(
   subfolders?: string[],
   sortBy?: string,
   sortOrder?: string,
-  unclassifiedOnly?: boolean
+  unclassifiedOnly?: boolean,
+  favoriteOnly?: boolean
 ): Promise<Clip[]> {
   const params = new URLSearchParams();
   if (searchTerm) params.append('searchTerm', searchTerm);
@@ -21,10 +22,24 @@ export async function getClips(
   if (sortBy) params.append('sortBy', sortBy);
   if (sortOrder) params.append('sortOrder', sortOrder);
   if (unclassifiedOnly) params.append('unclassifiedOnly', 'true');
+  if (favoriteOnly) params.append('favoriteOnly', 'true');
 
   const response = await fetch(`${API_BASE_URL}/api/clips?${params.toString()}`);
   if (!response.ok) {
     throw new Error('Failed to fetch clips');
+  }
+  return response.json();
+}
+
+export async function setFavorite(clipId: number, isFavorite: boolean): Promise<Clip> {
+  const response = await fetch(`${API_BASE_URL}/api/clips/${clipId}/favorite`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ isFavorite }),
+  });
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(error || 'Failed to update favorite');
   }
   return response.json();
 }

@@ -9,6 +9,7 @@ public class Clip
     public string LocationString { get; set; } = string.Empty;
     public int Duration { get; set; } // Duration in seconds
     public string? ThumbnailPath { get; set; } // Path to thumbnail image file
+    public bool IsFavorite { get; set; } = false;
     
     public ICollection<Tag> Tags { get; set; } = new List<Tag>();
 }

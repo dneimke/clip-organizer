@@ -19,6 +19,7 @@ public class QueryParseResult
     public string? SortBy { get; set; }
     public string? SortOrder { get; set; }
     public bool UnclassifiedOnly { get; set; }
+    public bool FavoriteOnly { get; set; }
     public string? InterpretedQuery { get; set; }
 }
 

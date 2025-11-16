@@ -53,7 +53,8 @@ public class ClipsController : ControllerBase
         [FromQuery] List<string>? subfolders,
         [FromQuery] string? sortBy = "dateAdded",
         [FromQuery] string? sortOrder = "desc",
-        [FromQuery] bool unclassifiedOnly = false)
+        [FromQuery] bool unclassifiedOnly = false,
+        [FromQuery] bool favoriteOnly = false)
     {
         var query = _context.Clips.Include(c => c.Tags).AsQueryable();
 
@@ -74,6 +75,12 @@ public class ClipsController : ControllerBase
         if (tagIds != null && tagIds.Any())
         {
             query = query.Where(c => c.Tags.Any(t => tagIds.Contains(t.Id)));
+        }
+
+        // Apply favorites filter
+        if (favoriteOnly)
+        {
+            query = query.Where(c => c.IsFavorite);
         }
 
         // Apply sorting
@@ -151,6 +158,24 @@ public class ClipsController : ControllerBase
         {
             return NotFound();
         }
+
+        return Ok(MapToDto(clip));
+    }
+
+    [HttpPatch("{id}/favorite")]
+    public async Task<ActionResult<ClipDto>> SetFavorite(int id, [FromBody] ToggleFavoriteDto dto)
+    {
+        var clip = await _context.Clips
+            .Include(c => c.Tags)
+            .FirstOrDefaultAsync(c => c.Id == id);
+
+        if (clip == null)
+        {
+            return NotFound();
+        }
+
+        clip.IsFavorite = dto.IsFavorite;
+        await _context.SaveChangesAsync();
 
         return Ok(MapToDto(clip));
     }
@@ -1063,6 +1088,7 @@ public class ClipsController : ControllerBase
             LocationString = clip.LocationString,
             Duration = clip.Duration,
             ThumbnailPath = clip.ThumbnailPath,
+            IsFavorite = clip.IsFavorite,
             Tags = clip.Tags.Select(t => new TagDto
             {
                 Id = t.Id,

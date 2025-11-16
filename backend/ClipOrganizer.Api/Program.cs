@@ -91,6 +91,13 @@ using (var scope = app.Services.CreateScope())
             command.CommandText = "ALTER TABLE Clips ADD COLUMN ThumbnailPath TEXT";
             command.ExecuteNonQuery();
         }
+
+        if (!columns.Contains("IsFavorite"))
+        {
+            // Add IsFavorite column (boolean stored as INTEGER 0/1), default false
+            command.CommandText = "ALTER TABLE Clips ADD COLUMN IsFavorite INTEGER NOT NULL DEFAULT 0";
+            command.ExecuteNonQuery();
+        }
         
         // Check if Settings table exists
         command.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='Settings'";

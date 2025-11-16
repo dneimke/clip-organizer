@@ -27,6 +27,35 @@ public class AIQueryServiceTests
         _httpClient = new HttpClient(_mockHttpHandler);
     }
 
+    [Fact]
+    public async Task ParseQueryAsync_FavouriteKeywordsInText_FallbackSetsFavoriteOnly()
+    {
+        // Arrange
+        var service = CreateService();
+        var context = CreateTestContext();
+        // Force fallback text parsing by returning non-JSON text content
+        var textResponse = "Please show my starred favourites only";
+
+        // Mock both API versions (v1beta and v1) since service tries both
+        _mockHttpHandler.When("*v1beta/models/*:generateContent*")
+            .Respond("application/json", CreateGeminiResponse(textResponse));
+        _mockHttpHandler.When("*v1/models/*:generateContent*")
+            .Respond("application/json", CreateGeminiResponse(textResponse));
+        
+        // Mock model discovery
+        _mockHttpHandler.When("*models?*")
+            .Respond("application/json", "{\"models\":[{\"name\":\"models/gemini-1.5-flash\",\"supportedGenerationMethods\":[\"generateContent\"]}]}");
+
+        // Act
+        var result = await service.ParseQueryAsync("show my favourites only", context);
+
+        // Assert
+        if (!result.InterpretedQuery.Contains("Error") && !result.InterpretedQuery.Contains("API key"))
+        {
+            result.FavoriteOnly.Should().BeTrue();
+        }
+    }
+
     private AIQueryService CreateService()
     {
         return new AIQueryService(_mockConfiguration.Object, _mockLogger.Object, _httpClient);
@@ -101,6 +130,7 @@ public class AIQueryServiceTests
             "sortBy": "dateAdded",
             "sortOrder": "desc",
             "unclassifiedOnly": false,
+            "favoriteOnly": true,
             "interpretedQuery": "Clips with flick and success tags"
         }
         """;
@@ -130,6 +160,7 @@ public class AIQueryServiceTests
             result.SortBy.Should().Be("dateAdded");
             result.SortOrder.Should().Be("desc");
             result.UnclassifiedOnly.Should().BeFalse();
+            result.FavoriteOnly.Should().BeTrue();
         }
         else
         {
@@ -153,6 +184,7 @@ public class AIQueryServiceTests
             "sortBy": null,
             "sortOrder": null,
             "unclassifiedOnly": false,
+            "favoriteOnly": false,
             "interpretedQuery": "Flick clips"
         }
         ```
@@ -178,6 +210,7 @@ public class AIQueryServiceTests
         {
             result.TagIds.Should().Contain(1);
             result.SearchTerm.Should().BeNull();
+            result.FavoriteOnly.Should().BeFalse();
         }
         else
         {
@@ -201,6 +234,7 @@ public class AIQueryServiceTests
             "sortBy": null,
             "sortOrder": null,
             "unclassifiedOnly": false,
+            "favoriteOnly": false,
             "interpretedQuery": "Training clips"
         }
         That's the result!
@@ -226,6 +260,7 @@ public class AIQueryServiceTests
         {
             result.SearchTerm.Should().Be("training");
             result.TagIds.Should().Contain(2);
+            result.FavoriteOnly.Should().BeFalse();
         }
         else
         {
@@ -248,6 +283,7 @@ public class AIQueryServiceTests
             "sortBy": null,
             "sortOrder": null,
             "unclassifiedOnly": false,
+            "favoriteOnly": false,
             "interpretedQuery": "Test"
         }
         """;
@@ -299,6 +335,7 @@ public class AIQueryServiceTests
             "sortBy": null,
             "sortOrder": null,
             "unclassifiedOnly": false,
+            "favoriteOnly": false,
             "interpretedQuery": "Test"
         }
         """;
@@ -346,6 +383,7 @@ public class AIQueryServiceTests
             "sortBy": "invalidSort",
             "sortOrder": "desc",
             "unclassifiedOnly": false,
+            "favoriteOnly": false,
             "interpretedQuery": "Test"
         }
         """;

@@ -11,5 +11,6 @@ public class ClipDto
     public string? ThumbnailPath { get; set; }
     public List<TagDto> Tags { get; set; } = new();
     public bool IsUnclassified { get; set; }
+    public bool IsFavorite { get; set; }
 }
 

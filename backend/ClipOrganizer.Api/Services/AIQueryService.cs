@@ -65,6 +65,7 @@ You MUST respond with ONLY a valid JSON object, no other text. Use this exact st
   ""sortBy"": ""dateAdded"" or ""title"" or null,
   ""sortOrder"": ""asc"" or ""desc"" or null,
   ""unclassifiedOnly"": true or false,
+  ""favoriteOnly"": true or false,
   ""interpretedQuery"": ""A brief explanation of what filters were applied""
 }}
 
@@ -77,6 +78,7 @@ Rules:
 - sortBy: Set to ""dateAdded"" if query mentions ""recent"", ""new"", ""latest"", ""old"", ""oldest"", or ""date"". Set to ""title"" if query mentions ""alphabetical"", ""name"", or ""title"". Use null otherwise.
 - sortOrder: Set to ""desc"" for ""recent"", ""new"", ""latest"". Set to ""asc"" for ""old"", ""oldest"", ""alphabetical"". Use null if sortBy is null.
 - unclassifiedOnly: Set to true if query asks for ""unclassified"", ""untagged"", ""uncategorized"", or ""missing tags"" clips.
+- favoriteOnly: Set to true if the query indicates favourites only. Recognize synonyms like ""favourites only"", ""favorites only"", ""favourite clips"", ""favorite clips"", ""starred"", ""liked"". Do not implement negative filters (ignore phrases like ""exclude favourites"").
 - interpretedQuery: A brief human-readable explanation of what the query was understood to mean.
 
 Examples:
@@ -88,7 +90,8 @@ Examples:
 - ""Find clips from YouTube folder"" → subfolders: [""YouTube""], searchTerm: null, interpretedQuery: ""Clips from YouTube subfolder""
 - ""Show me defender clips from last month"" → tagIds: [Defender tag ID], searchTerm: null, interpretedQuery: ""Clips tagged with Defender"" (note: date filtering not supported, so ignore temporal references)
 - ""Find backhand tip clips"" → searchTerm: ""backhand tip"", tagIds: [], interpretedQuery: ""Clips with 'backhand tip' in title or description"" (""clips"" is ignored as generic term)
-- ""Goal keeper training videos"" → tagIds: [Goal Keeper tag ID], searchTerm: ""training"", interpretedQuery: ""Clips tagged with Goal Keeper and searching for 'training'"" (""videos"" is ignored, but ""training"" is a meaningful keyword)";
+- ""Goal keeper training videos"" → tagIds: [Goal Keeper tag ID], searchTerm: ""training"", interpretedQuery: ""Clips tagged with Goal Keeper and searching for 'training'"" (""videos"" is ignored, but ""training"" is a meaningful keyword)
+- ""Show my favourite clips only"" → favoriteOnly: true, interpretedQuery: ""Favourites only""";
 
             // Use the discovered model or fallback to configured/default
             var model = availableModel ?? (_configuration["Gemini:Model"] ?? "gemini-1.5-flash");
@@ -359,6 +362,17 @@ Examples:
         {
             result.UnclassifiedOnly = true;
         }
+
+        // Check for favourites-only mentions (positive only, no negative)
+        if (textLower.Contains("favourites only") ||
+            textLower.Contains("favorites only") ||
+            textLower.Contains("favourite clips") ||
+            textLower.Contains("favorite clips") ||
+            textLower.Contains("starred") ||
+            textLower.Contains("liked"))
+        {
+            result.FavoriteOnly = true;
+        }
         
         return result;
     }
@@ -509,6 +523,7 @@ Examples:
                 SortBy = sortBy,
                 SortOrder = sortOrder,
                 UnclassifiedOnly = parsed.UnclassifiedOnly ?? false,
+                FavoriteOnly = parsed.FavoriteOnly ?? false,
                 InterpretedQuery = parsed.InterpretedQuery ?? "Query parsed successfully"
             };
         }
@@ -549,6 +564,7 @@ Examples:
         public string? SortBy { get; set; }
         public string? SortOrder { get; set; }
         public bool? UnclassifiedOnly { get; set; }
+        public bool? FavoriteOnly { get; set; }
         public string? InterpretedQuery { get; set; }
     }
 

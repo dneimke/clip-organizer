@@ -24,6 +24,7 @@ export default function BrowsePage() {
   const [error, setError] = useState<string | null>(null);
   const [unclassifiedCount, setUnclassifiedCount] = useState(0);
   const [unclassifiedFilterActive, setUnclassifiedFilterActive] = useState(false);
+  const [favoriteOnly, setFavoriteOnly] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('card');
 
@@ -71,7 +72,8 @@ export default function BrowsePage() {
         selectedSubfolders.length > 0 ? selectedSubfolders : undefined,
         sortBy,
         sortOrder,
-        unclassifiedFilterActive
+        unclassifiedFilterActive,
+        favoriteOnly
       );
       setClips(fetchedClips);
       setError(null);
@@ -81,7 +83,7 @@ export default function BrowsePage() {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, selectedTagIds, selectedSubfolders, sortBy, sortOrder, unclassifiedFilterActive]);
+  }, [searchTerm, selectedTagIds, selectedSubfolders, sortBy, sortOrder, unclassifiedFilterActive, favoriteOnly]);
 
   useEffect(() => {
     loadTags();
@@ -138,6 +140,8 @@ export default function BrowsePage() {
               value={searchTerm}
               onChange={setSearchTerm}
               placeholder="Search clips by title..."
+              favoriteOnly={favoriteOnly}
+              onFavoriteOnlyChange={setFavoriteOnly}
             />
           </div>
           <div className="flex items-center gap-4">

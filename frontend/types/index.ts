@@ -26,6 +26,7 @@ export interface Clip {
   thumbnailPath?: string;
   tags: Tag[];
   isUnclassified: boolean;
+  isFavorite: boolean;
 }
 
 export interface CreateClipDto {
@@ -173,6 +174,7 @@ export interface QueryParseResult {
   sortBy?: string | null;
   sortOrder?: string | null;
   unclassifiedOnly: boolean;
+  favoriteOnly?: boolean;
   interpretedQuery?: string | null;
 }
 

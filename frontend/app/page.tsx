@@ -61,7 +61,8 @@ export default function Home() {
         parseResult.subfolders.length > 0 ? parseResult.subfolders : undefined,
         parseResult.sortBy || undefined,
         parseResult.sortOrder || undefined,
-        parseResult.unclassifiedOnly
+        parseResult.unclassifiedOnly,
+        parseResult.favoriteOnly
       );
       setClips(fetchedClips);
       setError(null);
@@ -113,7 +114,7 @@ export default function Home() {
         </div>
 
         {/* Diagnostics Panel - Collapsible */}
-        {parsedFilters && (parsedFilters.interpretedQuery || parsedFilters.tagIds.length > 0 || parsedFilters.subfolders.length > 0 || parsedFilters.searchTerm || parsedFilters.unclassifiedOnly) && (
+        {parsedFilters && (parsedFilters.interpretedQuery || parsedFilters.tagIds.length > 0 || parsedFilters.subfolders.length > 0 || parsedFilters.searchTerm || parsedFilters.unclassifiedOnly || parsedFilters.favoriteOnly) && (
           <div className="mb-6 bg-[#202020] border border-[#303030] rounded-lg overflow-hidden">
             <button
               onClick={() => setDiagnosticsExpanded(!diagnosticsExpanded)}
@@ -132,6 +133,11 @@ export default function Home() {
                 {parsedFilters.searchTerm && (
                   <span className="text-xs bg-[#007BFF]/20 text-[#007BFF] px-2 py-0.5 rounded-full">
                     Search
+                  </span>
+                )}
+                {parsedFilters.favoriteOnly && (
+                  <span className="text-xs bg-[#ef4444]/20 text-[#ef4444] px-2 py-0.5 rounded-full">
+                    Favourites only
                   </span>
                 )}
                 <svg
@@ -156,7 +162,7 @@ export default function Home() {
                 )}
 
                 {/* Applied Filters */}
-                {(parsedFilters.tagIds.length > 0 || parsedFilters.subfolders.length > 0 || parsedFilters.searchTerm || parsedFilters.unclassifiedOnly) && (
+                {(parsedFilters.tagIds.length > 0 || parsedFilters.subfolders.length > 0 || parsedFilters.searchTerm || parsedFilters.unclassifiedOnly || parsedFilters.favoriteOnly) && (
                   <div>
                     <p className="text-xs text-gray-400 mb-2">Applied Filters:</p>
                     <div className="flex flex-wrap gap-2">
@@ -180,6 +186,11 @@ export default function Home() {
                           {subfolder}
                         </span>
                       ))}
+                      {parsedFilters.favoriteOnly && (
+                        <span className="px-3 py-1 bg-[#ef4444]/20 text-[#ef4444] rounded-full text-sm">
+                          Favourites only
+                        </span>
+                      )}
                       {parsedFilters.unclassifiedOnly && (
                         <span className="px-3 py-1 bg-yellow-600/20 text-yellow-400 rounded-full text-sm">
                           Unclassified only

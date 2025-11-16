@@ -184,6 +184,52 @@ public class ClipsControllerTests : IDisposable
 
     #endregion
 
+    #region Favorites Tests
+
+    [Fact]
+    public async Task GetClips_FavoriteOnly_ReturnsOnlyFavorites()
+    {
+        // Arrange
+        var favClip = new ClipBuilder().WithId(1).WithTitle("Fav").Build();
+        favClip.IsFavorite = true;
+        var normalClip = new ClipBuilder().WithId(2).WithTitle("Normal").Build();
+        _context.Clips.AddRange(favClip, normalClip);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _controller.GetClips(searchTerm: null, tagIds: null, subfolders: null, favoriteOnly: true);
+
+        // Assert
+        var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
+        var clips = okResult.Value.Should().BeAssignableTo<IEnumerable<ClipDto>>().Subject;
+        clips.Should().HaveCount(1);
+        clips.First().Title.Should().Be("Fav");
+        clips.First().IsFavorite.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SetFavorite_TogglesFavoriteFlag()
+    {
+        // Arrange
+        var clip = new ClipBuilder().WithId(1).WithTitle("Clip").Build();
+        _context.Clips.Add(clip);
+        await _context.SaveChangesAsync();
+
+        // Act - set favorite true
+        var setTrueResult = await _controller.SetFavorite(1, new ToggleFavoriteDto { IsFavorite = true });
+        var okTrue = setTrueResult.Result.Should().BeOfType<OkObjectResult>().Subject;
+        var dtoTrue = okTrue.Value.Should().BeOfType<ClipDto>().Subject;
+        dtoTrue.IsFavorite.Should().BeTrue();
+
+        // Act - set favorite false
+        var setFalseResult = await _controller.SetFavorite(1, new ToggleFavoriteDto { IsFavorite = false });
+        var okFalse = setFalseResult.Result.Should().BeOfType<OkObjectResult>().Subject;
+        var dtoFalse = okFalse.Value.Should().BeOfType<ClipDto>().Subject;
+        dtoFalse.IsFavorite.Should().BeFalse();
+    }
+
+    #endregion
+
     #region GetClip Tests
 
     [Fact]
