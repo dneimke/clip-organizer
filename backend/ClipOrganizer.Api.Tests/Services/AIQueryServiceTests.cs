@@ -50,9 +50,11 @@ public class AIQueryServiceTests
         var result = await service.ParseQueryAsync("show my favourites only", context);
 
         // Assert
-        if (!result.InterpretedQuery.Contains("Error") && !result.InterpretedQuery.Contains("API key"))
+        result.Should().NotBeNull();
+        var nonNullResult = result!;
+        if (!nonNullResult.InterpretedQuery.Contains("Error") && !nonNullResult.InterpretedQuery.Contains("API key"))
         {
-            result.FavoriteOnly.Should().BeTrue();
+            nonNullResult.FavoriteOnly.Should().BeTrue();
         }
     }
 
@@ -113,7 +115,8 @@ public class AIQueryServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result.InterpretedQuery.Should().Contain("API key not configured");
+        var nonNullResult = result!;
+        nonNullResult.InterpretedQuery.Should().Contain("API key not configured");
     }
 
     [Fact]
@@ -150,22 +153,23 @@ public class AIQueryServiceTests
 
         // Assert
         result.Should().NotBeNull();
+        var nonNullResult = result!;
         // If parsing succeeded, we get the parsed result; if error (e.g., model discovery failed), we get error message
-        if (!result.InterpretedQuery.Contains("Error") && !result.InterpretedQuery.Contains("API key") && !result.InterpretedQuery.Contains("models"))
+        if (!nonNullResult.InterpretedQuery.Contains("Error") && !nonNullResult.InterpretedQuery.Contains("API key") && !nonNullResult.InterpretedQuery.Contains("models"))
         {
             // Parsed successfully
-            result.TagIds.Should().Contain(1);
-            result.TagIds.Should().Contain(3);
-            result.Subfolders.Should().Contain("YouTube");
-            result.SortBy.Should().Be("dateAdded");
-            result.SortOrder.Should().Be("desc");
-            result.UnclassifiedOnly.Should().BeFalse();
-            result.FavoriteOnly.Should().BeTrue();
+            nonNullResult.TagIds.Should().Contain(1);
+            nonNullResult.TagIds.Should().Contain(3);
+            nonNullResult.Subfolders.Should().Contain("YouTube");
+            nonNullResult.SortBy.Should().Be("dateAdded");
+            nonNullResult.SortOrder.Should().Be("desc");
+            nonNullResult.UnclassifiedOnly.Should().BeFalse();
+            nonNullResult.FavoriteOnly.Should().BeTrue();
         }
         else
         {
             // Error/fallback was used - this is acceptable if HTTP/parsing fails
-            result.InterpretedQuery.Should().NotBeNullOrEmpty();
+            nonNullResult.InterpretedQuery.Should().NotBeNullOrEmpty();
         }
     }
 
@@ -205,17 +209,18 @@ public class AIQueryServiceTests
 
         // Assert
         result.Should().NotBeNull();
+        var nonNullResult = result!;
         // If parsing succeeded, tag should be present; if error/fallback, might be empty
-        if (!result.InterpretedQuery.Contains("Error") && !result.InterpretedQuery.Contains("API key"))
+        if (!nonNullResult.InterpretedQuery.Contains("Error") && !nonNullResult.InterpretedQuery.Contains("API key"))
         {
-            result.TagIds.Should().Contain(1);
-            result.SearchTerm.Should().BeNull();
-            result.FavoriteOnly.Should().BeFalse();
+            nonNullResult.TagIds.Should().Contain(1);
+            nonNullResult.SearchTerm.Should().BeNull();
+            nonNullResult.FavoriteOnly.Should().BeFalse();
         }
         else
         {
             // Error/fallback was used - this is acceptable
-            result.InterpretedQuery.Should().NotBeNullOrEmpty();
+            nonNullResult.InterpretedQuery.Should().NotBeNullOrEmpty();
         }
     }
 
@@ -255,17 +260,18 @@ public class AIQueryServiceTests
 
         // Assert
         result.Should().NotBeNull();
+        var nonNullResult = result!;
         // If parsing succeeded, we should get the parsed result; if error, we get error message
-        if (!result.InterpretedQuery.Contains("Error") && !result.InterpretedQuery.Contains("API key"))
+        if (!nonNullResult.InterpretedQuery.Contains("Error") && !nonNullResult.InterpretedQuery.Contains("API key"))
         {
-            result.SearchTerm.Should().Be("training");
-            result.TagIds.Should().Contain(2);
-            result.FavoriteOnly.Should().BeFalse();
+            nonNullResult.SearchTerm.Should().Be("training");
+            nonNullResult.TagIds.Should().Contain(2);
+            nonNullResult.FavoriteOnly.Should().BeFalse();
         }
         else
         {
             // Error/fallback was used - this is acceptable
-            result.InterpretedQuery.Should().NotBeNullOrEmpty();
+            nonNullResult.InterpretedQuery.Should().NotBeNullOrEmpty();
         }
     }
 
@@ -303,21 +309,22 @@ public class AIQueryServiceTests
 
         // Assert
         result.Should().NotBeNull();
+        var nonNullResult = result!;
         // If parsing succeeded, invalid tag IDs should be filtered out; if error, we get error message
-        if (!result.InterpretedQuery.Contains("Error") && !result.InterpretedQuery.Contains("API key") && !result.InterpretedQuery.Contains("models"))
+        if (!nonNullResult.InterpretedQuery.Contains("Error") && !nonNullResult.InterpretedQuery.Contains("API key") && !nonNullResult.InterpretedQuery.Contains("models"))
         {
             // Parsed successfully - invalid tag IDs should be filtered out
             var validTagIds = context.AvailableTags.Select(t => t.Id).ToList();
             if (validTagIds.Contains(1))
-                result.TagIds.Should().Contain(1);
+                nonNullResult.TagIds.Should().Contain(1);
             if (validTagIds.Contains(3))
-                result.TagIds.Should().Contain(3);
-            result.TagIds.Should().NotContain(999);
+                nonNullResult.TagIds.Should().Contain(3);
+            nonNullResult.TagIds.Should().NotContain(999);
         }
         else
         {
             // Error/fallback was used - this is acceptable if HTTP/parsing fails
-            result.InterpretedQuery.Should().NotBeNullOrEmpty();
+            nonNullResult.InterpretedQuery.Should().NotBeNullOrEmpty();
         }
     }
 
@@ -355,12 +362,13 @@ public class AIQueryServiceTests
 
         // Assert
         result.Should().NotBeNull();
+        var nonNullResult = result!;
         // Subfolders are matched case-insensitively from available subfolders
         // If parsing succeeded, subfolders should match; if error (e.g., model discovery failed), might be empty
-        if (!result.InterpretedQuery.Contains("Error") && !result.InterpretedQuery.Contains("API key") && !result.InterpretedQuery.Contains("models"))
+        if (!nonNullResult.InterpretedQuery.Contains("Error") && !nonNullResult.InterpretedQuery.Contains("API key") && !nonNullResult.InterpretedQuery.Contains("models"))
         {
-            result.Subfolders.Should().Contain(s => s.Equals("YouTube", StringComparison.OrdinalIgnoreCase));
-            result.Subfolders.Should().Contain(s => s.Equals("Training", StringComparison.OrdinalIgnoreCase));
+            nonNullResult.Subfolders.Should().Contain(s => s.Equals("YouTube", StringComparison.OrdinalIgnoreCase));
+            nonNullResult.Subfolders.Should().Contain(s => s.Equals("Training", StringComparison.OrdinalIgnoreCase));
         }
         else
         {
@@ -428,14 +436,15 @@ public class AIQueryServiceTests
 
         // Assert
         result.Should().NotBeNull();
+        var nonNullResult = result!;
         // When network error occurs, service should return error result
         // It might return early if model discovery fails, or return error after API call fails
-        result.InterpretedQuery.Should().NotBeNullOrEmpty();
+        nonNullResult.InterpretedQuery.Should().NotBeNullOrEmpty();
         // Should contain error indication (either from model discovery or API call)
-        (result.InterpretedQuery.Contains("Error") || 
-         result.InterpretedQuery.Contains("API key") || 
-         result.InterpretedQuery.Contains("models") ||
-         result.InterpretedQuery.Contains("parsing")).Should().BeTrue();
+        (nonNullResult.InterpretedQuery.Contains("Error") || 
+         nonNullResult.InterpretedQuery.Contains("API key") || 
+         nonNullResult.InterpretedQuery.Contains("models") ||
+         nonNullResult.InterpretedQuery.Contains("parsing")).Should().BeTrue();
     }
 
     [Fact]
@@ -460,14 +469,15 @@ public class AIQueryServiceTests
 
         // Assert
         result.Should().NotBeNull();
+        var nonNullResult = result!;
         // When network error occurs, service should return error result
         // It might return early if model discovery fails, or return error after API call fails
-        result.InterpretedQuery.Should().NotBeNullOrEmpty();
+        nonNullResult.InterpretedQuery.Should().NotBeNullOrEmpty();
         // Should contain error indication (either from model discovery or API call)
-        (result.InterpretedQuery.Contains("Error") || 
-         result.InterpretedQuery.Contains("API key") || 
-         result.InterpretedQuery.Contains("models") ||
-         result.InterpretedQuery.Contains("parsing")).Should().BeTrue();
+        (nonNullResult.InterpretedQuery.Contains("Error") || 
+         nonNullResult.InterpretedQuery.Contains("API key") || 
+         nonNullResult.InterpretedQuery.Contains("models") ||
+         nonNullResult.InterpretedQuery.Contains("parsing")).Should().BeTrue();
     }
 
     #endregion
