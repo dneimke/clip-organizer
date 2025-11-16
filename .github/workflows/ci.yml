@@ -21,17 +21,14 @@ jobs:
           dotnet-version: '8.0.x'
       
       - name: Restore dependencies
-        working-directory: backend/ClipOrganizer.Api
         run: dotnet restore
       
       - name: Build
-        working-directory: backend/ClipOrganizer.Api
         run: dotnet build --no-restore --configuration Release
       
       - name: Test
-        working-directory: backend/ClipOrganizer.Api
-        run: dotnet test --no-build --configuration Release
-        continue-on-error: true  # Continue if no tests exist
+        working-directory: backend/ClipOrganizer.Api.Tests
+        run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage"
 
   frontend:
     name: Build and Lint Frontend
