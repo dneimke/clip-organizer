@@ -82,7 +82,7 @@ public class ThumbnailService : IThumbnailService
         {
             if (!File.Exists(videoPath))
             {
-                _logger.LogWarning("Video file not found: {VideoPath}", videoPath);
+                _logger.LogWarning("Video file not found: {VideoPath}", SanitizeForLog(videoPath));
                 return null;
             }
 
@@ -97,7 +97,7 @@ public class ThumbnailService : IThumbnailService
             // Provide more helpful error messages
             var errorMessage = GetErrorMessage(ex);
             _logger.LogError(ex, "Failed to generate thumbnail for clip {ClipId} from {VideoPath}. {ErrorMessage}", 
-                clipId, videoPath, errorMessage);
+                clipId, SanitizeForLog(videoPath), errorMessage);
             return null;
         }
     }
@@ -108,7 +108,7 @@ public class ThumbnailService : IThumbnailService
         {
             if (!File.Exists(videoPath))
             {
-                _logger.LogWarning("Video file not found: {VideoPath}", videoPath);
+                _logger.LogWarning("Video file not found: {VideoPath}", SanitizeForLog(videoPath));
                 return null;
             }
 
@@ -151,7 +151,7 @@ public class ThumbnailService : IThumbnailService
             // Provide more helpful error messages
             var errorMessage = GetErrorMessage(ex);
             _logger.LogError(ex, "Failed to generate thumbnail for clip {ClipId} from {VideoPath}. {ErrorMessage}", 
-                clipId, videoPath, errorMessage);
+                clipId, SanitizeForLog(videoPath), errorMessage);
             return null;
         }
     }
@@ -203,6 +203,15 @@ public class ThumbnailService : IThumbnailService
     public string GetThumbnailPath(int clipId)
     {
         return Path.Combine(_thumbnailsDirectory, $"{clipId}.jpg");
+    }
+    /// <summary>
+    /// Removes newline and carriage return characters to prevent log forging.
+    /// </summary>
+    private static string SanitizeForLog(string input)
+    {
+        if (input == null)
+            return string.Empty;
+        return input.Replace("\r", "").Replace("\n", "");
     }
 }
 
