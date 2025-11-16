@@ -1,4 +1,6 @@
-# 🏑 Field Hockey Video Library
+# 🏑 Video Library
+
+[![CI](https://github.com/dneimke/clip-organizer/actions/workflows/ci.yml/badge.svg)](https://github.com/dneimke/clip-organizer/actions/workflows/ci.yml)
 
 A modern video clip management system designed for organizing, tagging, and retrieving field hockey video content. Manage clips from local Windows file paths and YouTube URLs with powerful search and filtering capabilities.
 
