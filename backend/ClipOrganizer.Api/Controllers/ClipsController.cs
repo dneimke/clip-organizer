@@ -4,6 +4,7 @@ using ClipOrganizer.Api.Data;
 using ClipOrganizer.Api.DTOs;
 using ClipOrganizer.Api.Models;
 using ClipOrganizer.Api.Services;
+using ClipOrganizer.Api.Helpers;
 using System.IO;
 
 namespace ClipOrganizer.Api.Controllers;
@@ -458,7 +459,7 @@ public class ClipsController : ControllerBase
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error uploading clip: {FilePath}", filePath);
+                _logger.LogError(ex, "Error uploading clip: {FilePath}", LogSanitizationHelper.SanitizePathForLogging(filePath));
                 response.Failures.Add(new BulkUploadErrorDto
                 {
                     FilePath = filePath,

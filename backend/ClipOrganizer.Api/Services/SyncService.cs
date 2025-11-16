@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ClipOrganizer.Api.Data;
 using ClipOrganizer.Api.DTOs;
 using ClipOrganizer.Api.Models;
+using ClipOrganizer.Api.Helpers;
 using System.IO;
 
 namespace ClipOrganizer.Api.Services;
@@ -138,7 +139,7 @@ public class SyncService : ISyncService
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error adding clip during sync: {FilePath}", filePath);
+                    _logger.LogError(ex, "Error adding clip during sync: {FilePath}", LogSanitizationHelper.SanitizePathForLogging(filePath));
                     response.Errors.Add(new SyncErrorDto
                     {
                         FilePath = filePath,
@@ -203,7 +204,7 @@ public class SyncService : ISyncService
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error scanning directory for {Extension} files: {Path}", extension, rootPath);
+                    _logger.LogWarning(ex, "Error scanning directory for {Extension} files: {Path}", LogSanitizationHelper.SanitizeForLogging(extension), LogSanitizationHelper.SanitizePathForLogging(rootPath));
                 }
             }
 
@@ -217,13 +218,13 @@ public class SyncService : ISyncService
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error scanning subdirectory: {Path}", subdirectory);
+                    _logger.LogWarning(ex, "Error scanning subdirectory: {Path}", LogSanitizationHelper.SanitizePathForLogging(subdirectory));
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error scanning directory: {Path}", rootPath);
+            _logger.LogWarning(ex, "Error scanning directory: {Path}", LogSanitizationHelper.SanitizePathForLogging(rootPath));
         }
 
         return videoFiles;
@@ -340,7 +341,7 @@ public class SyncService : ISyncService
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Error processing file during preview: {FilePath}", filePath);
+                    _logger.LogWarning(ex, "Error processing file during preview: {FilePath}", LogSanitizationHelper.SanitizePathForLogging(filePath));
                     response.Items.Add(new ReconciliationItemDto
                     {
                         FilePath = filePath,
@@ -498,7 +499,7 @@ public class SyncService : ISyncService
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error adding clip during selective sync: {FilePath}", filePath);
+                    _logger.LogError(ex, "Error adding clip during selective sync: {FilePath}", LogSanitizationHelper.SanitizePathForLogging(filePath));
                     response.Errors.Add(new SyncErrorDto
                     {
                         FilePath = filePath,

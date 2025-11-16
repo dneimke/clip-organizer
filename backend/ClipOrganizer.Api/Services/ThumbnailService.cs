@@ -5,6 +5,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using System.Drawing;
+using ClipOrganizer.Api.Helpers;
 
 namespace ClipOrganizer.Api.Services;
 
@@ -82,7 +83,7 @@ public class ThumbnailService : IThumbnailService
         {
             if (!File.Exists(videoPath))
             {
-                _logger.LogWarning("Video file not found: {VideoPath}", videoPath);
+                _logger.LogWarning("Video file not found: {VideoPath}", LogSanitizationHelper.SanitizePathForLogging(videoPath));
                 return null;
             }
 
@@ -97,7 +98,7 @@ public class ThumbnailService : IThumbnailService
             // Provide more helpful error messages
             var errorMessage = GetErrorMessage(ex);
             _logger.LogError(ex, "Failed to generate thumbnail for clip {ClipId} from {VideoPath}. {ErrorMessage}", 
-                clipId, videoPath, errorMessage);
+                clipId, LogSanitizationHelper.SanitizePathForLogging(videoPath), LogSanitizationHelper.SanitizeForLogging(errorMessage));
             return null;
         }
     }
@@ -108,7 +109,7 @@ public class ThumbnailService : IThumbnailService
         {
             if (!File.Exists(videoPath))
             {
-                _logger.LogWarning("Video file not found: {VideoPath}", videoPath);
+                _logger.LogWarning("Video file not found: {VideoPath}", LogSanitizationHelper.SanitizePathForLogging(videoPath));
                 return null;
             }
 
@@ -151,7 +152,7 @@ public class ThumbnailService : IThumbnailService
             // Provide more helpful error messages
             var errorMessage = GetErrorMessage(ex);
             _logger.LogError(ex, "Failed to generate thumbnail for clip {ClipId} from {VideoPath}. {ErrorMessage}", 
-                clipId, videoPath, errorMessage);
+                clipId, LogSanitizationHelper.SanitizePathForLogging(videoPath), LogSanitizationHelper.SanitizeForLogging(errorMessage));
             return null;
         }
     }
@@ -196,7 +197,7 @@ public class ThumbnailService : IThumbnailService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to delete thumbnail: {ThumbnailPath}", thumbnailPath);
+            _logger.LogWarning(ex, "Failed to delete thumbnail: {ThumbnailPath}", LogSanitizationHelper.SanitizePathForLogging(thumbnailPath));
         }
     }
 

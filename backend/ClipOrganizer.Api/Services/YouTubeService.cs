@@ -1,6 +1,7 @@
 using Google.Apis.Services;
 using Google.Apis.YouTube.v3;
 using ClipOrganizer.Api.Models;
+using ClipOrganizer.Api.Helpers;
 using GoogleYouTubeService = Google.Apis.YouTube.v3.YouTubeService;
 
 namespace ClipOrganizer.Api.Services;
@@ -99,7 +100,7 @@ public class YouTubeService : IYouTubeService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching YouTube video metadata for {VideoId}", videoId);
+            _logger.LogError(ex, "Error fetching YouTube video metadata for {VideoId}", LogSanitizationHelper.SanitizeForLogging(videoId));
             throw;
         }
     }
