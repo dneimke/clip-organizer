@@ -616,10 +616,15 @@ public class ClipsController : ControllerBase
             var oldThumbnailsDir = Path.Combine(_env.ContentRootPath, "thumbnails");
             var newThumbnailsDir = Path.Combine(rootFolder, "thumbnails");
 
+            _logger.LogInformation("Starting thumbnail migration. Old location: {OldDir}, New location: {NewDir}", 
+                LogSanitizationHelper.SanitizePathForLogging(oldThumbnailsDir), 
+                LogSanitizationHelper.SanitizePathForLogging(newThumbnailsDir));
+
             // Ensure new thumbnails directory exists
             if (!Directory.Exists(newThumbnailsDir))
             {
                 Directory.CreateDirectory(newThumbnailsDir);
+                _logger.LogInformation("Created new thumbnails directory: {NewDir}", LogSanitizationHelper.SanitizePathForLogging(newThumbnailsDir));
             }
 
             // Get all clips with local thumbnails (not YouTube URLs)
@@ -641,8 +646,13 @@ public class ClipsController : ControllerBase
                 {
                     var currentPath = clip.ThumbnailPath;
                     
-                    // Check if already in new location
-                    if (currentPath.StartsWith(newThumbnailsDir, StringComparison.OrdinalIgnoreCase))
+                    // Get new thumbnail path first (normalize paths for comparison)
+                    var newThumbnailPath = await _thumbnailService.GetThumbnailPathAsync(clip.Id);
+                    var normalizedNewThumbnailsDir = Path.GetFullPath(newThumbnailsDir);
+                    var normalizedCurrentPath = Path.IsPathRooted(currentPath) ? Path.GetFullPath(currentPath) : currentPath;
+                    
+                    // Check if already in new location (using normalized paths)
+                    if (normalizedCurrentPath.StartsWith(normalizedNewThumbnailsDir, StringComparison.OrdinalIgnoreCase))
                     {
                         alreadyMigrated++;
                         continue;
@@ -650,9 +660,10 @@ public class ClipsController : ControllerBase
 
                     // Determine old thumbnail path
                     string? oldThumbnailPath = null;
+                    var normalizedOldThumbnailsDir = Path.GetFullPath(oldThumbnailsDir);
                     
                     // If the path is absolute and points to old location, use it
-                    if (Path.IsPathRooted(currentPath) && currentPath.StartsWith(oldThumbnailsDir, StringComparison.OrdinalIgnoreCase))
+                    if (Path.IsPathRooted(currentPath) && normalizedCurrentPath.StartsWith(normalizedOldThumbnailsDir, StringComparison.OrdinalIgnoreCase))
                     {
                         oldThumbnailPath = currentPath;
                     }
@@ -672,23 +683,40 @@ public class ClipsController : ControllerBase
                         }
                     }
 
-                    if (oldThumbnailPath == null || !System.IO.File.Exists(oldThumbnailPath))
+                    // If new location already has the file, update database path (file may have been manually moved)
+                    // Also check for .png extension in case it was saved as PNG
+                    var newThumbnailPathPng = Path.ChangeExtension(newThumbnailPath, ".png");
+                    if (System.IO.File.Exists(newThumbnailPath) || System.IO.File.Exists(newThumbnailPathPng))
                     {
-                        _logger.LogWarning("Thumbnail not found for clip {ClipId} at old location: {OldPath}", clip.Id, oldThumbnailPath ?? "unknown");
-                        skipped++;
+                        // Use the actual file that exists (prefer .jpg, fall back to .png)
+                        var actualNewPath = System.IO.File.Exists(newThumbnailPath) ? newThumbnailPath : newThumbnailPathPng;
+                        _logger.LogInformation("Thumbnail already exists at new location for clip {ClipId}, updating database path from {OldPath} to {NewPath}", 
+                            clip.Id, LogSanitizationHelper.SanitizePathForLogging(currentPath), LogSanitizationHelper.SanitizePathForLogging(actualNewPath));
+                        clip.ThumbnailPath = actualNewPath;
+                        await _context.SaveChangesAsync();
+                        alreadyMigrated++;
                         continue;
                     }
 
-                    // Get new thumbnail path
-                    var newThumbnailPath = await _thumbnailService.GetThumbnailPathAsync(clip.Id);
-                    
-                    // If new location already has the file, skip migration but update database
-                    if (System.IO.File.Exists(newThumbnailPath))
+                    // If old file doesn't exist, check one more time if new location has the file
+                    // (in case files were manually copied but old files were deleted)
+                    if (oldThumbnailPath == null || !System.IO.File.Exists(oldThumbnailPath))
                     {
-                        _logger.LogInformation("Thumbnail already exists at new location for clip {ClipId}, updating database path", clip.Id);
-                        clip.ThumbnailPath = newThumbnailPath;
-                        await _context.SaveChangesAsync();
-                        alreadyMigrated++;
+                        // Double-check new location one more time (maybe file was just created)
+                        if (System.IO.File.Exists(newThumbnailPath) || System.IO.File.Exists(newThumbnailPathPng))
+                        {
+                            var actualNewPath = System.IO.File.Exists(newThumbnailPath) ? newThumbnailPath : newThumbnailPathPng;
+                            _logger.LogInformation("Old thumbnail not found, but thumbnail exists at new location for clip {ClipId}, updating database path from {OldPath} to {NewPath}", 
+                                clip.Id, LogSanitizationHelper.SanitizePathForLogging(currentPath), LogSanitizationHelper.SanitizePathForLogging(actualNewPath));
+                            clip.ThumbnailPath = actualNewPath;
+                            await _context.SaveChangesAsync();
+                            alreadyMigrated++;
+                            continue;
+                        }
+                        
+                        _logger.LogWarning("Thumbnail not found for clip {ClipId} at old location: {OldPath}. Current DB path: {CurrentPath}. New path checked: {NewPath}", 
+                            clip.Id, oldThumbnailPath ?? "unknown", LogSanitizationHelper.SanitizePathForLogging(currentPath), LogSanitizationHelper.SanitizePathForLogging(newThumbnailPath));
+                        skipped++;
                         continue;
                     }
 
