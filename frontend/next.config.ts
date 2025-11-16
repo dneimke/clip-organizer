@@ -16,6 +16,19 @@ const nextConfig: NextConfig = {
         port: '5059',
         pathname: '/api/**',
       },
+      // Allow HTTPS redirects from backend in development
+      {
+        protocol: 'https',
+        hostname: 'localhost',
+        port: '7059',
+        pathname: '/api/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '127.0.0.1',
+        port: '7059',
+        pathname: '/api/**',
+      },
     ],
     domains: [
       // YouTube thumbnail hosts

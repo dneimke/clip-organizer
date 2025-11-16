@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Clip } from '@/types';
 import { getClip, deleteClip } from '@/lib/api/clips';
 import YouTubePlayer from '@/components/YouTubePlayer';
@@ -240,28 +239,6 @@ export default function ClipDetailPage() {
               </button>
             </div>
           </div>
-
-          {/* Thumbnail */}
-          {clip.thumbnailPath && (
-            <div className="mb-6 relative w-full max-w-2xl mx-auto aspect-video">
-              {clip.storageType === 'YouTube' ? (
-                <Image
-                  src={clip.thumbnailPath}
-                  alt={clip.title}
-                  fill
-                  className="object-contain rounded-lg shadow-lg"
-                  unoptimized
-                />
-              ) : (
-                <Image
-                  src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5059'}/api/clips/${clip.id}/thumbnail`}
-                  alt={clip.title}
-                  fill
-                  className="object-contain rounded-lg shadow-lg"
-                />
-              )}
-            </div>
-          )}
 
           <div className="mb-6">
             {clip.storageType === 'YouTube' ? (

@@ -91,6 +91,7 @@ export default function ClipListItem({ clip }: ClipListItemProps) {
                   alt={clip.title}
                   fill
                   className="object-cover"
+                  unoptimized
                   onError={(e) => {
                     // Fallback to placeholder if image fails to load
                     const target = e.currentTarget;
