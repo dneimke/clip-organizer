@@ -182,7 +182,7 @@ public class LogSanitizationHelperTests
     public void SanitizeForLogging_MixedControlCharacters_HandlesAll()
     {
         // Arrange
-        var input = "Text\nwith\ttabs\r\nand\rnewlines\x00and\x1Fcontrol";
+        var input = "Text\nwith\ttabs\r\nand\rnewlines\u0000and\u001Fcontrol";
 
         // Act
         var result = LogSanitizationHelper.SanitizeForLogging(input);
