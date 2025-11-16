@@ -159,8 +159,8 @@ export default function BulkUpload({ onComplete, onClose }: BulkUploadProps) {
           }
         }, 1500);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to upload clips');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to upload clips');
     } finally {
       setIsUploading(false);
     }
@@ -234,7 +234,7 @@ export default function BulkUpload({ onComplete, onClose }: BulkUploadProps) {
             or click to browse
           </p>
           <p className="text-yellow-400 text-xs mt-3 pt-3 border-t border-yellow-400/20">
-            Note: You'll need to provide full file paths after selecting files
+            Note: You&apos;ll need to provide full file paths after selecting files
           </p>
         </div>
 
@@ -277,7 +277,7 @@ export default function BulkUpload({ onComplete, onClose }: BulkUploadProps) {
                 </button>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Enter the folder path (e.g., C:\Videos) and click "Apply" to prepend it to filenames
+                Enter the folder path (e.g., C:\Videos) and click &quot;Apply&quot; to prepend it to filenames
               </p>
             </div>
 

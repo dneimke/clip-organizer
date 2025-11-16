@@ -22,8 +22,8 @@ export default function SettingsPage() {
       setError(null);
       const setting = await getRootFolder();
       setRootFolderPath(setting.rootFolderPath || '');
-    } catch (err: any) {
-      setError(err.message || 'Failed to load root folder setting');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load root folder setting');
     } finally {
       setIsLoading(false);
     }
@@ -43,8 +43,8 @@ export default function SettingsPage() {
       await setRootFolder(rootFolderPath.trim());
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to save root folder setting');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to save root folder setting');
     } finally {
       setIsSaving(false);
     }

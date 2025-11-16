@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { SessionPlan, Clip } from '@/types';
 import { getSessionPlan } from '@/lib/api/session-plans';
@@ -11,7 +11,6 @@ import Toast from '@/components/Toast';
 
 export default function PlanDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const planId = parseInt(params.id as string);
   const [plan, setPlan] = useState<SessionPlan | null>(null);
   const [clips, setClips] = useState<Clip[]>([]);
@@ -19,11 +18,7 @@ export default function PlanDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
-  useEffect(() => {
-    loadPlan();
-  }, [planId]);
-
-  const loadPlan = async () => {
+  const loadPlan = useCallback(async () => {
     try {
       setLoading(true);
       const fetchedPlan = await getSessionPlan(planId);
@@ -36,13 +31,17 @@ export default function PlanDetailPage() {
         setClips(planClips);
       }
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load session plan');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load session plan');
       console.error('Error loading plan:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [planId]);
+
+  useEffect(() => {
+    loadPlan();
+  }, [loadPlan]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -51,13 +50,6 @@ export default function PlanDetailPage() {
       month: 'long',
       day: 'numeric',
     });
-  };
-
-  const formatDuration = (seconds: number) => {
-    if (seconds === 0) return 'N/A';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const totalDuration = clips.reduce((sum, clip) => sum + clip.duration, 0);

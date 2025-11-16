@@ -97,10 +97,11 @@ export default function SessionPlanModal({ isOpen, onClose, onPlanSaved }: Sessi
         const matchingClips = clips.filter((c) => plan.clipIds.includes(c.id));
         setPlanClips(matchingClips);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to generate session plan');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to generate session plan';
+      setError(errorMessage);
       setToast({
-        message: err.message || 'Failed to generate session plan',
+        message: errorMessage,
         type: 'error',
       });
     } finally {
@@ -138,10 +139,11 @@ export default function SessionPlanModal({ isOpen, onClose, onPlanSaved }: Sessi
       setTimeout(() => {
         onClose();
       }, 1000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to save session plan');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save session plan';
+      setError(errorMessage);
       setToast({
-        message: err.message || 'Failed to save session plan',
+        message: errorMessage,
         type: 'error',
       });
     } finally {

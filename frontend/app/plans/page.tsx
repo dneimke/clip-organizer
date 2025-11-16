@@ -1,14 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SessionPlan } from '@/types';
 import { getSessionPlans, deleteSessionPlan } from '@/lib/api/session-plans';
 import Toast from '@/components/Toast';
 
 export default function PlansPage() {
-  const router = useRouter();
   const [plans, setPlans] = useState<SessionPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,8 +23,8 @@ export default function PlansPage() {
       const fetchedPlans = await getSessionPlans();
       setPlans(fetchedPlans);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load session plans');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load session plans');
       console.error('Error loading plans:', err);
     } finally {
       setLoading(false);
@@ -46,9 +44,9 @@ export default function PlansPage() {
         message: 'Session plan deleted successfully',
         type: 'success',
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({
-        message: err.message || 'Failed to delete session plan',
+        message: err instanceof Error ? err.message : 'Failed to delete session plan',
         type: 'error',
       });
     } finally {
@@ -92,7 +90,7 @@ export default function PlansPage() {
           <div className="text-center py-12">
             <p className="text-gray-400 text-lg mb-4">No session plans yet</p>
             <p className="text-gray-500 text-sm">
-              Create your first session plan using the "Plan a Session" button in the header
+              Create your first session plan using the &quot;Plan a Session&quot; button in the header
             </p>
           </div>
         ) : (

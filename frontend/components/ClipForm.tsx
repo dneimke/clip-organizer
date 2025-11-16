@@ -44,7 +44,7 @@ export default function ClipForm({ clipId, initialLocationString = '', initialTi
       const [tags, cats] = await Promise.all([getTags(), getTagCategories()]);
       setTagsByCategory(tags);
       setCategories(cats);
-    } catch (err) {
+    } catch {
       setError('Failed to load tags');
     } finally {
       setIsLoadingTags(false);
@@ -74,8 +74,8 @@ export default function ClipForm({ clipId, initialLocationString = '', initialTi
       setDescription(result.description);
       setSelectedTagIds(result.suggestedTagIds);
       setAiSuggestedNewTags(result.suggestedNewTags || []);
-    } catch (err: any) {
-      setError(err.message || 'Failed to generate metadata with AI');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to generate metadata with AI');
     } finally {
       setIsGenerating(false);
     }
@@ -127,8 +127,8 @@ export default function ClipForm({ clipId, initialLocationString = '', initialTi
       // Reload tags to show newly created tags
       await loadTags();
       router.push('/');
-    } catch (err: any) {
-      setError(err.message || 'Failed to save clip');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to save clip');
     } finally {
       setLoading(false);
     }

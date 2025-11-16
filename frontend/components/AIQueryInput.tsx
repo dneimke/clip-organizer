@@ -70,7 +70,7 @@ export default function AIQueryInput({
         </button>
       </div>
       <div className="mt-2 text-xs text-gray-400">
-        <p>Try: "Show me clips with successful PC attacks", "Find videos in the midfield area", "What unclassified clips do I have?"</p>
+        <p>Try: &quot;Show me clips with successful PC attacks&quot;, &quot;Find videos in the midfield area&quot;, &quot;What unclassified clips do I have?&quot;</p>
       </div>
     </form>
   );

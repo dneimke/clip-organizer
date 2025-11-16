@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { Clip, Tag } from '@/types';
 import { getClips, getSubfolders } from '@/lib/api/clips';
 import { getTags } from '@/lib/api/tags';
@@ -13,7 +12,6 @@ import ViewToggle from '@/components/ViewToggle';
 import Toast from '@/components/Toast';
 
 export default function BrowsePage() {
-  const router = useRouter();
   const [clips, setClips] = useState<Clip[]>([]);
   const [tagsByCategory, setTagsByCategory] = useState<Record<string, Tag[]>>({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -77,8 +75,8 @@ export default function BrowsePage() {
       );
       setClips(fetchedClips);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load clips');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load clips');
       console.error('Error loading clips:', err);
     } finally {
       setLoading(false);

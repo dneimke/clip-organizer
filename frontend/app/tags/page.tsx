@@ -1,12 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Tag, CreateTagDto } from '@/types';
 import { getTags, getTagCategories, createTag } from '@/lib/api/tags';
 
 export default function TagsPage() {
-  const router = useRouter();
   const [tagsByCategory, setTagsByCategory] = useState<Record<string, Tag[]>>({});
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,8 +24,8 @@ export default function TagsPage() {
       setTagsByCategory(tags);
       setCategories(cats);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load tags');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load tags');
       console.error('Error loading tags:', err);
     } finally {
       setLoading(false);
@@ -50,8 +48,8 @@ export default function TagsPage() {
       });
       setNewTag({ category: '', value: '' });
       await loadData(); // Reload tags
-    } catch (err: any) {
-      setCreateError(err.message || 'Failed to create tag');
+    } catch (err: unknown) {
+      setCreateError(err instanceof Error ? err.message : 'Failed to create tag');
     } finally {
       setIsCreating(false);
     }

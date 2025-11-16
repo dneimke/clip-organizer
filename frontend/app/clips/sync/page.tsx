@@ -28,7 +28,7 @@ export default function SyncPage() {
       setConfiguredRootFolder(configuredPath);
       setRootFolderPath(configuredPath);
       setIsUsingDefault(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to load configured root folder:', err);
     } finally {
       setIsLoading(false);
@@ -64,8 +64,8 @@ export default function SyncPage() {
       // Otherwise, send the custom path
       const response = await syncClips(pathToUse === configuredRootFolder ? '' : pathToUse);
       setResult(response);
-    } catch (err: any) {
-      setError(err.message || 'Failed to sync clips');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to sync clips');
     } finally {
       setIsSyncing(false);
     }

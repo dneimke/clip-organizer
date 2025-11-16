@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Clip } from '@/types';
@@ -19,23 +19,23 @@ export default function ClipDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => {
-    loadClip();
-  }, [clipId]);
-
-  const loadClip = async () => {
+  const loadClip = useCallback(async () => {
     try {
       setLoading(true);
       const fetchedClip = await getClip(clipId);
       setClip(fetchedClip);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load clip');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load clip');
       console.error('Error loading clip:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [clipId]);
+
+  useEffect(() => {
+    loadClip();
+  }, [loadClip]);
 
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this clip?')) {
@@ -47,18 +47,12 @@ export default function ClipDetailPage() {
       await deleteClip(clipId);
       router.push('/');
       router.refresh();
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete clip');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete clip');
       setIsDeleting(false);
     }
   };
 
-  const formatDuration = (seconds: number) => {
-    if (seconds === 0) return 'N/A';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   if (loading) {
     return (
@@ -219,7 +213,7 @@ export default function ClipDetailPage() {
             <div className="flex-1 min-w-0">
               <h1 className="text-3xl font-bold text-white mb-2 break-words">{clip.title}</h1>
               <div className="flex items-center gap-4 text-sm text-gray-400 flex-wrap">
-                <span>Duration: {formatDuration(clip.duration)}</span>
+                <span>Duration: {clip.duration === 0 ? 'N/A' : `${Math.floor(clip.duration / 60)}:${(clip.duration % 60).toString().padStart(2, '0')}`}</span>
                 <span className={`px-2 py-1 rounded font-medium ${
                   clip.storageType === 'YouTube'
                     ? 'bg-red-900/50 text-red-300 border border-red-700'

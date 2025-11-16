@@ -12,7 +12,6 @@ import { QueryParseResult } from '@/types';
 
 export default function Home() {
   const [clips, setClips] = useState<Clip[]>([]);
-  const [query, setQuery] = useState('');
   const [parsedFilters, setParsedFilters] = useState<QueryParseResult | null>(null);
   const [tagsByCategory, setTagsByCategory] = useState<Record<string, Tag[]>>({});
   const [loading, setLoading] = useState(false);
@@ -45,7 +44,6 @@ export default function Home() {
   }, []);
 
   const handleQuerySubmit = useCallback(async (userQuery: string) => {
-    setQuery(userQuery);
     setError(null);
     setParsing(true);
     setHasSearched(true);
@@ -67,8 +65,8 @@ export default function Home() {
       );
       setClips(fetchedClips);
       setError(null);
-    } catch (err: any) {
-      const errorMessage = err.message || 'Failed to parse query or load clips';
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to parse query or load clips';
       setError(errorMessage);
       setToast({
         message: errorMessage,
@@ -83,7 +81,6 @@ export default function Home() {
   }, []);
 
   const handleClear = () => {
-    setQuery('');
     setParsedFilters(null);
     setClips([]);
     setError(null);
@@ -165,7 +162,7 @@ export default function Home() {
                     <div className="flex flex-wrap gap-2">
                       {parsedFilters.searchTerm && (
                         <span className="px-3 py-1 bg-[#007BFF]/20 text-[#007BFF] rounded-full text-sm">
-                          Search: "{parsedFilters.searchTerm}"
+                          Search: &quot;{parsedFilters.searchTerm}&quot;
                         </span>
                       )}
                       {parsedFilters.tagIds.length > 0 && (() => {

@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSyncPreview, selectiveSync } from '@/lib/api/clips';
 import { getRootFolder } from '@/lib/api/settings';
-import { SyncPreviewResponse, ReconciliationItem, SyncResponse } from '@/types';
+import { SyncPreviewResponse, SyncResponse } from '@/types';
 import ReconciliationItemComponent from '@/components/ReconciliationItem';
 import ReconciliationSummary from '@/components/ReconciliationSummary';
 import StatusFilter from '@/components/StatusFilter';
@@ -37,7 +37,7 @@ export default function ReconcilePage() {
       setConfiguredRootFolder(configuredPath);
       setRootFolderPath(configuredPath);
       setIsUsingDefault(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to load configured root folder:', err);
     } finally {
       setIsLoading(false);
@@ -73,8 +73,8 @@ export default function ReconcilePage() {
     try {
       const response = await getSyncPreview(pathToUse === configuredRootFolder ? '' : pathToUse);
       setPreview(response);
-    } catch (err: any) {
-      setError(err.message || 'Failed to preview sync');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to preview sync');
     } finally {
       setIsPreviewing(false);
     }
@@ -154,8 +154,8 @@ export default function ReconcilePage() {
       setResult(response);
       // Refresh preview after applying changes
       await handlePreview();
-    } catch (err: any) {
-      setError(err.message || 'Failed to apply changes');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to apply changes');
     } finally {
       setIsApplying(false);
     }

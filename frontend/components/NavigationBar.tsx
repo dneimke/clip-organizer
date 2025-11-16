@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { syncClips } from '@/lib/api/clips';
 import { getRootFolder } from '@/lib/api/settings';
@@ -65,9 +65,9 @@ export default function NavigationBar() {
       if (pathname === '/') {
         router.refresh();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({
-        message: err.message || 'Failed to sync clips',
+        message: err instanceof Error ? err.message : 'Failed to sync clips',
         type: 'error',
       });
     } finally {
