@@ -1,27 +1,19 @@
 'use client';
 
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, FormEvent } from 'react';
 
 interface AIQueryInputProps {
   onQuerySubmit: (query: string) => void;
   isLoading?: boolean;
   placeholder?: string;
-  clearSignal?: number;
 }
 
 export default function AIQueryInput({ 
   onQuerySubmit, 
   isLoading = false,
-  placeholder = "Ask me anything about your clips... (e.g., 'Show me clips with successful PC attacks')",
-  clearSignal,
+  placeholder = "Ask me anything about your clips... (e.g., 'Show me clips with successful PC attacks')"
 }: AIQueryInputProps) {
   const [query, setQuery] = useState('');
-
-  useEffect(() => {
-    if (clearSignal !== undefined) {
-      setQuery('');
-    }
-  }, [clearSignal]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();

@@ -21,7 +21,7 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<ViewMode>('card');
   const [hasSearched, setHasSearched] = useState(false);
   const [diagnosticsExpanded, setDiagnosticsExpanded] = useState(false);
-  const [queryClearSignal, setQueryClearSignal] = useState(0);
+  const [queryInputKey, setQueryInputKey] = useState(0);
 
   // Load view mode from localStorage after hydration
   useEffect(() => {
@@ -85,7 +85,7 @@ export default function Home() {
     setClips([]);
     setError(null);
     setHasSearched(false);
-    setQueryClearSignal(prev => prev + 1);
+    setQueryInputKey(prev => prev + 1);
   };
 
   const handleViewModeChange = (mode: ViewMode) => {
@@ -102,9 +102,9 @@ export default function Home() {
         {/* AI Query Input */}
         <div className="mb-6">
           <AIQueryInput
+            key={queryInputKey}
             onQuerySubmit={handleQuerySubmit}
             isLoading={parsing}
-            clearSignal={queryClearSignal}
           />
         </div>
 
