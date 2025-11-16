@@ -25,7 +25,8 @@ For clips stored as local files, thumbnails are generated using the following pr
 - **Image Processing**: ImageSharp (SixLabors.ImageSharp)
 - **Format**: JPEG
 - **Dimensions**: 320x180 pixels (16:9 aspect ratio)
-- **Storage Location**: `backend/ClipOrganizer.Api/thumbnails/`
+- **Storage Location**: `{RootFolderPath}/thumbnails/` (where RootFolderPath is configured in Settings or appsettings.json)
+- **Fallback Location**: If Root Folder Path is not configured, thumbnails are stored in `backend/ClipOrganizer.Api/thumbnails/` for backward compatibility
 - **Naming Convention**: `{clipId}.jpg` (e.g., `1.jpg`, `42.jpg`)
 
 ### YouTube Thumbnails
@@ -55,6 +56,74 @@ Thumbnails are automatically generated in the following scenarios:
 
 3. **Manual Regeneration**: Via `POST /api/clips/regenerate-thumbnails`
    - Can regenerate thumbnails for existing clips (see below)
+
+4. **Migration**: Via `POST /api/clips/migrate-thumbnails`
+   - Migrates existing thumbnails from old location to new location (see below)
+
+## Migrating Thumbnails
+
+### Overview
+
+Thumbnails are now stored in a subfolder under the Root Folder Path (`{RootFolderPath}/thumbnails/`) instead of the application directory. This allows users to easily backup all content (videos + thumbnails) in a single folder.
+
+### Migration Endpoint
+
+**Endpoint**: `POST /api/clips/migrate-thumbnails`
+
+**Purpose**: Moves existing thumbnails from the old location (`backend/ClipOrganizer.Api/thumbnails/`) to the new location (`{RootFolderPath}/thumbnails/`) and updates database paths.
+
+### Prerequisites
+
+- Root Folder Path must be configured in Settings or `appsettings.json` before running migration
+- The Root Folder Path directory must exist and be accessible
+
+### Usage Examples
+
+**Migrate all thumbnails to new location**:
+```bash
+# PowerShell
+Invoke-RestMethod -Uri "http://localhost:5059/api/clips/migrate-thumbnails" -Method POST
+
+# curl
+curl -X POST http://localhost:5059/api/clips/migrate-thumbnails
+```
+
+**Using browser developer console**:
+```javascript
+fetch('http://localhost:5059/api/clips/migrate-thumbnails', { method: 'POST' })
+  .then(r => r.json())
+  .then(console.log);
+```
+
+### Response Format
+
+The endpoint returns a JSON object with the following structure:
+
+```json
+{
+  "totalProcessed": 25,
+  "migrated": 20,
+  "alreadyMigrated": 3,
+  "failed": 1,
+  "skipped": 1,
+  "message": "Thumbnail migration completed. Processed: 25, Migrated: 20, Already migrated: 3, Failed: 1, Skipped: 1"
+}
+```
+
+**Fields**:
+- `totalProcessed`: Total number of clips processed
+- `migrated`: Number of thumbnails successfully moved to new location
+- `alreadyMigrated`: Number of thumbnails already in new location (database path updated)
+- `failed`: Number of clips that failed to migrate (e.g., file move errors)
+- `skipped`: Number of clips skipped (e.g., thumbnail not found in old location)
+- `message`: Human-readable summary message
+
+### Important Notes
+
+- **Safe to Run Multiple Times**: The migration is idempotent - running it multiple times will skip already migrated thumbnails
+- **File Movement**: Files are moved (not copied), so the old location will be empty after successful migration
+- **YouTube Thumbnails**: YouTube thumbnails (URLs) are automatically skipped
+- **Backward Compatibility**: The system will check the old location if a thumbnail is not found in the new location
 
 ## Regenerating Thumbnails
 
@@ -135,6 +204,13 @@ The frontend handles both local and YouTube thumbnails automatically:
 - Local thumbnails: Loaded from `/api/clips/{id}/thumbnail`
 - YouTube thumbnails: Loaded directly from YouTube's CDN (via redirect)
 
+### Backward Compatibility
+
+The thumbnail serving endpoint (`GET /api/clips/{id}/thumbnail`) includes backward compatibility:
+- First checks the new location (`{RootFolderPath}/thumbnails/{clipId}.jpg`)
+- If not found, checks the old location (`backend/ClipOrganizer.Api/thumbnails/{clipId}.jpg` or `.png`)
+- This ensures existing thumbnails continue to work during and after migration
+
 ## Error Handling
 
 ### Graceful Degradation
@@ -201,8 +277,9 @@ If thumbnails aren't generating:
    - Error messages now include helpful guidance on how to fix FFmpeg configuration issues
 
 4. **Verify File Permissions**:
-   - Ensure the application has write access to the `thumbnails/` directory
+   - Ensure the application has write access to the `thumbnails/` directory (either in Root Folder Path or ContentRootPath)
    - Check that video files are readable
+   - If using Root Folder Path, ensure it's configured correctly in Settings
 
 5. **Test Thumbnail Generation**:
    - Try regenerating thumbnails for a single clip
@@ -222,18 +299,39 @@ The `Clips` table includes a `ThumbnailPath` column:
 
 - **Type**: `TEXT` (nullable)
 - **Purpose**: Stores the path to the thumbnail file (local) or URL (YouTube)
-- **Local Clips**: Contains a file path like `C:\path\to\thumbnails\42.jpg`
+- **Local Clips**: Contains a file path like `C:\RootFolder\thumbnails\42.jpg` (new location) or `C:\path\to\app\thumbnails\42.jpg` (old location)
 - **YouTube Clips**: Contains a URL like `https://img.youtube.com/vi/VIDEO_ID/default.jpg`
 
-### Migration
+### Database Migration
 
-The `ThumbnailPath` column is automatically added to existing databases on application startup. No manual migration is required.
+The `ThumbnailPath` column is automatically added to existing databases on application startup. No manual database schema migration is required.
+
+### Thumbnail File Migration
+
+To migrate existing thumbnail files from the old location to the new location, use the migration endpoint:
+- **Endpoint**: `POST /api/clips/migrate-thumbnails`
+- See [Migrating Thumbnails](#migrating-thumbnails) section above for details
 
 ## File System Structure
 
+### New Location (Recommended)
+
+```
+{RootFolderPath}/
+├── thumbnails/          # Generated thumbnail images (created automatically)
+│   ├── 1.jpg
+│   ├── 2.jpg
+│   └── ...
+├── video1.mp4           # Video files
+├── video2.mp4
+└── ...
+```
+
+### Old Location (Fallback)
+
 ```
 backend/ClipOrganizer.Api/
-├── thumbnails/          # Generated thumbnail images (created automatically)
+├── thumbnails/          # Old thumbnail location (for backward compatibility)
 │   ├── 1.jpg
 │   ├── 2.jpg
 │   └── ...
@@ -242,8 +340,11 @@ backend/ClipOrganizer.Api/
 
 **Notes**:
 - The `thumbnails/` directory is created automatically when the first thumbnail is generated
+- **New Location**: `{RootFolderPath}/thumbnails/` - allows easy backup of all content in one folder
+- **Old Location**: `backend/ClipOrganizer.Api/thumbnails/` - used as fallback if Root Folder Path is not configured
 - Thumbnails are named `{clipId}.jpg` for easy identification
 - Old thumbnails are automatically deleted when clips are updated or deleted
+- **Migration**: Use `POST /api/clips/migrate-thumbnails` to move thumbnails from old to new location
 
 ## Performance Considerations
 
